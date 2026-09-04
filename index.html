@@ -125,6 +125,7 @@ tfoot td:first-child{text-align:left}
     <button class="nav-btn" onclick="showTab('estoque',this)">📦 Estoque</button>
     <button class="nav-btn" onclick="showTab('cmv',this)">💰 CMV</button>
     <button class="nav-btn" onclick="showTab('ensaio',this)">📝 Ensaio</button>
+    <button class="nav-btn" onclick="showTab('financeiro',this)">💳 Financeiro</button>
     <button class="nav-btn" onclick="showTab('admin',this)">⚙️ Admin</button>
   </div>
 
@@ -177,6 +178,14 @@ tfoot td:first-child{text-align:left}
     <!-- ENSAIO -->
     <div id="tab-ensaio" class="tab-content">
       <div class="card"><div class="card-title">Anotações Gerenciais Mensais 2026</div><div id="tbl-ensaio"></div></div>
+    </div>
+
+    <!-- FINANCEIRO -->
+    <div id="tab-financeiro" class="tab-content">
+      <div class="kpi-grid" id="kpi-financeiro"></div>
+      <div class="card"><div class="card-title">Evolução do Saldo Total (R$)</div><div class="ch-tall"><canvas id="chSaldo"></canvas></div></div>
+      <div class="card"><div class="card-title">Saldo Bancário 2026</div><div id="tbl-saldo-2026"></div></div>
+      <div class="card"><div class="card-title">Histórico Saldo Bancário (2022–2025)</div><div id="tbl-saldo-hist"></div></div>
     </div>
 
     <!-- ADMIN -->
@@ -339,6 +348,60 @@ const DEFAULT = {
     {mes:'Outubro',  v:'',l:'',c:'',g:''},
     {mes:'Novembro', v:'',l:'',c:'',g:''},
     {mes:'Dezembro', v:'',l:'',c:'',g:''},
+  ],
+  saldo_hist: [
+    {data:'20/07/22',caixa:100447.75,itau:0,itauInv:17447.43,bradesco:0,braInv:0,sicredi:0,total:117895.18,variacao:0,varPct:0},
+    {data:'25/08/22',caixa:80759.42,itau:0,itauInv:24781.13,bradesco:0,braInv:0,sicredi:0,total:105540.55,variacao:-12354.63,varPct:-10},
+    {data:'05/09/22',caixa:85622.41,itau:0,itauInv:38083.36,bradesco:0,braInv:0,sicredi:0,total:123705.77,variacao:18165.22,varPct:17},
+    {data:'31/10/22',caixa:26255.37,itau:0,itauInv:44919.83,bradesco:0,braInv:0,sicredi:0,total:71175.20,variacao:-52530.57,varPct:-42},
+    {data:'08/11/22',caixa:36542.11,itau:0,itauInv:34252.35,bradesco:0,braInv:0,sicredi:0,total:70794.46,variacao:-380.74,varPct:-1},
+    {data:'23/11/22',caixa:65815.69,itau:0,itauInv:35771.60,bradesco:0,braInv:0,sicredi:0,total:101587.29,variacao:30792.83,varPct:43},
+    {data:'15/12/22',caixa:336015.03,itau:0,itauInv:35771.60,bradesco:0,braInv:0,sicredi:0,total:371786.63,variacao:270199.34,varPct:266},
+    {data:'12/01/23',caixa:242000.00,itau:0,itauInv:15563.68,bradesco:0,braInv:0,sicredi:0,total:257563.68,variacao:-114222.95,varPct:-31},
+    {data:'26/01/23',caixa:244021.00,itau:0,itauInv:18652.68,bradesco:0,braInv:0,sicredi:0,total:262673.68,variacao:5110.00,varPct:2},
+    {data:'10/02/23',caixa:185064.29,itau:0,itauInv:10561.40,bradesco:0,braInv:0,sicredi:0,total:195625.69,variacao:-67047.99,varPct:-26},
+    {data:'24/02/23',caixa:180072.15,itau:0,itauInv:11241.60,bradesco:0,braInv:0,sicredi:0,total:191313.75,variacao:-4311.94,varPct:-2},
+    {data:'22/03/23',caixa:192487.25,itau:0,itauInv:19871.27,bradesco:0,braInv:0,sicredi:0,total:212358.52,variacao:21044.77,varPct:11},
+    {data:'14/04/23',caixa:206665.81,itau:0,itauInv:18724.04,bradesco:0,braInv:0,sicredi:0,total:225389.85,variacao:13031.33,varPct:6},
+    {data:'04/05/23',caixa:187271.92,itau:0,itauInv:20100.67,bradesco:0,braInv:0,sicredi:0,total:207372.59,variacao:-18017.26,varPct:-8},
+    {data:'19/05/23',caixa:198423.44,itau:0,itauInv:24691.97,bradesco:0,braInv:0,sicredi:0,total:223115.41,variacao:15742.82,varPct:8},
+    {data:'05/06/23',caixa:177425.12,itau:0,itauInv:28317.39,bradesco:0,braInv:0,sicredi:0,total:205742.51,variacao:-17372.90,varPct:-8},
+    {data:'16/06/23',caixa:185991.61,itau:0,itauInv:28557.61,bradesco:0,braInv:0,sicredi:0,total:214549.22,variacao:8806.71,varPct:4},
+    {data:'28/07/23',caixa:127663.15,itau:0,itauInv:28557.61,bradesco:0,braInv:0,sicredi:0,total:156220.76,variacao:-58328.46,varPct:-27},
+    {data:'25/08/23',caixa:417462.82,itau:0,itauInv:31978.96,bradesco:0,braInv:0,sicredi:0,total:449441.78,variacao:293221.02,varPct:188},
+    {data:'05/09/23',caixa:390404.12,itau:0,itauInv:32762.39,bradesco:0,braInv:0,sicredi:0,total:423166.51,variacao:-26275.27,varPct:-6},
+    {data:'13/09/23',caixa:376642.22,itau:0,itauInv:33323.34,bradesco:0,braInv:0,sicredi:0,total:409965.56,variacao:-13200.95,varPct:-3},
+    {data:'18/09/23',caixa:420144.21,itau:0,itauInv:33216.81,bradesco:0,braInv:0,sicredi:0,total:453361.02,variacao:43395.46,varPct:11},
+    {data:'13/10/23',caixa:324237.23,itau:0,itauInv:33216.81,bradesco:0,braInv:0,sicredi:0,total:357454.04,variacao:-95906.98,varPct:-21},
+    {data:'13/11/23',caixa:313258.95,itau:0,itauInv:46718.10,bradesco:0,braInv:0,sicredi:0,total:359977.05,variacao:2523.01,varPct:1},
+    {data:'23/11/23',caixa:296002.87,itau:0,itauInv:46954.12,bradesco:0,braInv:0,sicredi:0,total:342956.99,variacao:-17020.06,varPct:-5},
+    {data:'28/12/23',caixa:207260.53,itau:0,itauInv:29965.22,bradesco:0,braInv:0,sicredi:0,total:237225.75,variacao:-105731.24,varPct:-31},
+    {data:'09/02/24',caixa:139775.22,itau:0,itauInv:16580.88,bradesco:0,braInv:0,sicredi:0,total:156356.10,variacao:-80869.65,varPct:-34},
+    {data:'23/02/24',caixa:120134.21,itau:0,itauInv:14460.68,bradesco:0,braInv:0,sicredi:0,total:134594.89,variacao:-21761.21,varPct:-14},
+    {data:'08/03/24',caixa:98684.85,itau:0,itauInv:15131.37,bradesco:0,braInv:0,sicredi:0,total:113816.22,variacao:-20778.67,varPct:-15},
+    {data:'01/04/24',caixa:70273.85,itau:0,itauInv:8932.19,bradesco:0,braInv:0,sicredi:0,total:79206.04,variacao:-34610.18,varPct:-30},
+    {data:'16/04/24',caixa:152189.99,itau:0,itauInv:13778.01,bradesco:0,braInv:0,sicredi:0,total:165968.00,variacao:86761.96,varPct:110},
+    {data:'21/06/24',caixa:242426.97,itau:0,itauInv:41527.77,bradesco:0,braInv:0,sicredi:0,total:283954.74,variacao:117986.74,varPct:71},
+    {data:'02/08/24',caixa:649278.59,itau:0,itauInv:635965.58,bradesco:0,braInv:0,sicredi:0,total:1285244.17,variacao:1001289.43,varPct:353},
+    {data:'05/09/24',caixa:705923.08,itau:0,itauInv:582616.52,bradesco:0,braInv:0,sicredi:8291.49,total:1296831.09,variacao:11586.92,varPct:1},
+    {data:'04/10/24',caixa:646839.95,itau:0,itauInv:541854.93,bradesco:0,braInv:70247.73,sicredi:0,total:1258942.61,variacao:-37888.48,varPct:-3},
+    {data:'28/10/24',caixa:660868.97,itau:0,itauInv:510897.54,bradesco:0,braInv:81984.40,sicredi:0,total:1253750.91,variacao:-5191.70,varPct:0},
+    {data:'22/11/24',caixa:644947.57,itau:0,itauInv:434731.59,bradesco:0,braInv:79825.39,sicredi:0,total:1159504.55,variacao:-94246.36,varPct:-8},
+    {data:'30/12/24',caixa:802000.00,itau:0,itauInv:400000.00,bradesco:0,braInv:50270.00,sicredi:0,total:1252270.00,variacao:92765.45,varPct:8},
+    {data:'17/01/25',caixa:772163.00,itau:0,itauInv:455342.00,bradesco:0,braInv:53508.59,sicredi:0,total:1281013.59,variacao:28743.59,varPct:2},
+    {data:'26/02/25',caixa:173012.89,itau:459946.89,itauInv:9983.96,bradesco:458134.35,braInv:0,sicredi:63601.42,total:1164679.51,variacao:-116334.08,varPct:-9},
+    {data:'23/05/25',caixa:17726.89,itau:244477.00,itauInv:5776.00,bradesco:438549.00,braInv:29034.00,sicredi:0,total:735562.89,variacao:-429116.62,varPct:-37},
+    {data:'23/06/25',caixa:128811.13,itau:0,itauInv:123214.32,bradesco:432477.00,braInv:23092.78,sicredi:0,total:707595.23,variacao:-27967.66,varPct:-4},
+    {data:'29/08/25',caixa:326095.96,itau:0,itauInv:73590.21,bradesco:442208.00,braInv:71483.68,sicredi:0,total:913377.85,variacao:205782.62,varPct:29},
+    {data:'12/09/25',caixa:302730.00,itau:0,itauInv:77638.00,bradesco:444221.00,braInv:91785.57,sicredi:0,total:916374.57,variacao:2996.72,varPct:0},
+    {data:'25/09/25',caixa:321428.47,itau:0,itauInv:75204.18,bradesco:446030.00,braInv:111412.77,sicredi:0,total:954075.42,variacao:37700.85,varPct:4},
+  ],
+  saldo_2026: [
+    {data:'16/jan',itau:5919.63,stone:0,bradesco:79837.05,braInv:463423.00,sicredi:90072.44,sicrediApl:0,total:639252.12,variacao:-314823.30},
+    {data:'08/mai',itau:131377.86,stone:11671.07,bradesco:27.04,braInv:438271.84,sicredi:114040.61,sicrediApl:0,total:695388.42,variacao:56136.30},
+    {data:'15/jul',itau:494902.82,stone:24535.59,bradesco:8164.44,braInv:217871.37,sicredi:54576.40,sicrediApl:305499.00,total:1105549.62,variacao:410161.20},
+    {data:'15/ago',itau:470272.96,stone:10846.71,bradesco:9222.84,braInv:217871.37,sicredi:74504.00,sicrediApl:309069.00,total:1091786.88,variacao:-13762.74},
+    {data:'04/set',itau:550089.53,stone:13814.30,bradesco:21623.59,braInv:222056.68,sicredi:99649.01,sicrediApl:311496.86,total:1218729.97,variacao:126943.09},
   ]
 };
 
@@ -407,6 +470,8 @@ async function onLogin(user) {
   if (row && row.dados) {
     D = row.dados;
     // ensure all 12 months exist in each array
+    D.saldo_hist = DEFAULT.saldo_hist;
+    D.saldo_2026 = DEFAULT.saldo_2026;
     for (const key of ['vendas','logistica','est_cub','est_gua','cmv','ensaio']) {
       if (!D[key] || D[key].length < 12) D[key] = DEFAULT[key].map((def, i) => (D[key] && D[key][i]) ? D[key][i] : def);
     }
@@ -463,13 +528,15 @@ function renderAll() {
   renderCmvTable();
   renderCmvKPI();
   renderEnsaio();
+  renderSaldo();
   renderAdmin();
   renderCharts('vendas');
 }
 
 // ── VENDAS ────────────────────────────────────────────────────────────────
 function renderVendasKPI() {
-  const rows = D.vendas.filter(r => r.total > 0);
+  const rows = D.vendas.filter(r => r.total > 0 || r.cubatao > 0);
+  rows.forEach(r => { if (!r.total) r.total = r.cubatao + r.guaruja; });
   const tot = rows.reduce((s,r) => s + r.total, 0);
   const ref = rows.reduce((s,r) => s + (r.ref2025||0), 0);
   const pct = ref ? (tot - ref) / ref * 100 : 0;
@@ -486,12 +553,14 @@ function renderVendasTable() {
   const rows = D.vendas;
   let html = `<table><thead><tr><th>Mês</th><th>Cubatão</th><th>Guarujá</th><th>Total 2026</th><th>Ref 2025</th><th>Meta</th><th>vs Meta</th><th>vs 2025</th></tr></thead><tbody>`;
   rows.forEach(r => {
-    if (!r.total && !r.cubatao) { html += `<tr><td>${r.mes}</td><td colspan="7" style="color:#ccc;text-align:center">—</td></tr>`; return; }
-    const vm = r.meta ? ((r.total - r.meta) / r.meta * 100) : null;
-    const vr = r.ref2025 ? ((r.total - r.ref2025) / r.ref2025 * 100) : null;
-    html += `<tr><td>${r.mes}</td><td>${RM(r.cubatao)}</td><td>${RM(r.guaruja)}</td><td><strong>${RM(r.total)}</strong></td><td>${RM(r.ref2025)}</td><td>${r.meta ? RM(r.meta) : '—'}</td><td>${vm !== null ? pill(vm) : '—'}</td><td>${vr !== null ? pill(vr) : '—'}</td></tr>`;
+    const t = r.total || (r.cubatao + r.guaruja);
+    if (!t && !r.cubatao) { html += `<tr><td>${r.mes}</td><td colspan="7" style="color:#ccc;text-align:center">—</td></tr>`; return; }
+    const vm = r.meta ? ((t - r.meta) / r.meta * 100) : null;
+    const vr = r.ref2025 ? ((t - r.ref2025) / r.ref2025 * 100) : null;
+    html += `<tr><td>${r.mes}</td><td>${RM(r.cubatao)}</td><td>${RM(r.guaruja)}</td><td><strong>${RM(t)}</strong></td><td>${RM(r.ref2025)}</td><td>${r.meta ? RM(r.meta) : '—'}</td><td>${vm !== null ? pill(vm) : '—'}</td><td>${vr !== null ? pill(vr) : '—'}</td></tr>`;
   });
-  const actv = rows.filter(r=>r.total>0);
+  const actv = rows.filter(r=>(r.total||r.cubatao)>0);
+  actv.forEach(r => { if (!r.total) r.total = r.cubatao + r.guaruja; });
   const tot = actv.reduce((s,r)=>s+r.total,0);
   const ref = actv.reduce((s,r)=>s+r.ref2025,0);
   html += `</tbody><tfoot><tr><td>Total acumulado</td><td>${RM(actv.reduce((s,r)=>s+r.cubatao,0))}</td><td>${RM(actv.reduce((s,r)=>s+r.guaruja,0))}</td><td>${RM(tot)}</td><td>${RM(ref)}</td><td>—</td><td>—</td><td>${ref ? pill((tot-ref)/ref*100) : '—'}</td></tr></tfoot></table>`;
@@ -675,6 +744,40 @@ function renderAdmin() {
   });
 }
 
+// ── FINANCEIRO ────────────────────────────────────────────────────────────
+function renderSaldo() {
+  const h = D.saldo_hist, s26 = D.saldo_2026;
+  const ultimo = s26.filter(r=>r.total>0).slice(-1)[0] || h.slice(-1)[0];
+  const maiorH = Math.max(...h.map(r=>r.total));
+  const varUlt = ultimo ? ultimo.variacao : 0;
+
+  document.getElementById('kpi-financeiro').innerHTML = `
+    <div class="kpi ${ultimo&&ultimo.total>900000?'green':'orange'}"><div class="lbl">Saldo Atual (set/26)</div><div class="val">${RM(1218729.97)}</div><div class="sub">04/set/2026</div></div>
+    <div class="kpi ${varUlt>=0?'green':'red'}"><div class="lbl">Variação Último Período</div><div class="val">${varUlt>=0?'▲':'▼'} ${RM(Math.abs(varUlt))}</div><div class="sub">${varUlt>=0?'+':''}${varUlt?((varUlt/( (ultimo?ultimo.total:1)-varUlt))*100).toFixed(1):'0'}%</div></div>
+    <div class="kpi orange"><div class="lbl">Pico Histórico</div><div class="val">${RM(Math.max(maiorH,...s26.map(r=>r.total)))}</div><div class="sub">02/ago/24</div></div>
+    <div class="kpi"><div class="lbl">Bancos Ativos</div><div class="val">5</div><div class="sub">Itaú · Stone · Bradesco · SICREDI · Aplicação</div></div>`;
+
+  // Tabela 2026
+  let h26 = `<table><thead><tr><th>Data</th><th>Itaú</th><th>Stone</th><th>Bradesco</th><th>Bra Invest.</th><th>SICREDI</th><th>SICREDI Apl.</th><th>Total</th><th>Variação</th></tr></thead><tbody>`;
+  s26.forEach(r => {
+    const cls = r.variacao > 0 ? 'up' : r.variacao < 0 ? 'dn' : 'neu';
+    const sign = r.variacao > 0 ? '▲' : r.variacao < 0 ? '▼' : '—';
+    h26 += `<tr><td><strong>${r.data}</strong></td><td>${r.itau?RM(r.itau):'—'}</td><td>${r.stone?RM(r.stone):'—'}</td><td>${r.bradesco?RM(r.bradesco):'—'}</td><td>${r.braInv?RM(r.braInv):'—'}</td><td>${r.sicredi?RM(r.sicredi):'—'}</td><td>${r.sicrediApl?RM(r.sicrediApl):'—'}</td><td><strong>${RM(r.total)}</strong></td><td><span class="${cls}">${sign} ${RM(Math.abs(r.variacao))}</span></td></tr>`;
+  });
+  h26 += `</tbody></table>`;
+  document.getElementById('tbl-saldo-2026').innerHTML = h26;
+
+  // Tabela histórico
+  let hh = `<table><thead><tr><th>Data</th><th>Caixa (Itaú)</th><th>Itaú 2</th><th>Itaú Invest</th><th>Bradesco</th><th>Bra Invest.</th><th>SICREDI</th><th>Total</th><th>Variação</th></tr></thead><tbody>`;
+  h.forEach(r => {
+    const cls = r.variacao > 0 ? 'up' : r.variacao < 0 ? 'dn' : 'neu';
+    const sign = r.variacao > 0 ? '▲' : r.variacao < 0 ? '▼' : '—';
+    hh += `<tr><td><strong>${r.data}</strong></td><td>${RM(r.caixa)}</td><td>${r.itau?RM(r.itau):'—'}</td><td>${r.itauInv?RM(r.itauInv):'—'}</td><td>${r.bradesco?RM(r.bradesco):'—'}</td><td>${r.braInv?RM(r.braInv):'—'}</td><td>${r.sicredi?RM(r.sicredi):'—'}</td><td><strong>${RM(r.total)}</strong></td><td>${r.variacao?`<span class="${cls}">${sign} ${RM(Math.abs(r.variacao))}</span>`:'—'}</td></tr>`;
+  });
+  hh += `</tbody></table>`;
+  document.getElementById('tbl-saldo-hist').innerHTML = hh;
+}
+
 // ── CHARTS ────────────────────────────────────────────────────────────────
 function renderCharts(tab) {
   if (tab === 'vendas') {
@@ -711,6 +814,16 @@ function renderCharts(tab) {
       {label:'B',data:rg.map(r=>r.b),backgroundColor:'#3498db',borderRadius:3},
       {label:'C',data:rg.map(r=>r.c),backgroundColor:'#e74c3c',borderRadius:3},
     ]},{scales:{x:{stacked:true},y:{stacked:true,ticks:{callback:v=>'R$'+Math.round(v/1000)+'K'}}}});
+  }
+  if (tab === 'financeiro') {
+    const hist = D.saldo_hist;
+    const s26 = D.saldo_2026.filter(r=>r.total>0);
+    const allData = [...hist, ...s26];
+    const labels = allData.map(r=>r.data);
+    const totals = allData.map(r=>r.total);
+    mkChart('chSaldo','line',{labels,datasets:[
+      {label:'Saldo Total',data:totals,borderColor:'#0f3460',backgroundColor:'rgba(15,52,96,0.12)',borderWidth:2.5,tension:.3,fill:true,pointRadius:3,pointHoverRadius:6},
+    ]},{y:{ticks:{callback:v=>'R$'+Math.round(v/1000)+'K'}}});
   }
   if (tab === 'cmv') {
     const rows = D.cmv.filter(r=>r.fat>0);
