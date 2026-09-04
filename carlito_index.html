@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carlito — Indicadores 2026</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f2f5;color:#2c3e50}
+
+/* LOGIN */
+#loginScreen{position:fixed;inset:0;background:linear-gradient(135deg,#1a1a2e,#0f3460);display:flex;align-items:center;justify-content:center;z-index:9999}
+.login-box{background:#fff;border-radius:16px;padding:40px 36px;width:320px;box-shadow:0 20px 60px rgba(0,0,0,0.4);text-align:center}
+.login-logo{font-size:2rem;margin-bottom:4px}
+.login-title{font-size:1.3rem;font-weight:700;color:#1a1a2e;margin-bottom:4px}
+.login-sub{font-size:0.8rem;color:#888;margin-bottom:24px}
+.login-box input{width:100%;padding:11px 14px;border:1.5px solid #ddd;border-radius:8px;font-size:0.95rem;margin-bottom:12px;outline:none;transition:border .2s}
+.login-box input:focus{border-color:#0f3460}
+.login-btn{width:100%;padding:12px;background:linear-gradient(135deg,#0f3460,#e74c3c);color:#fff;border:none;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;transition:opacity .2s}
+.login-btn:hover{opacity:.9}
+.login-err{color:#e74c3c;font-size:0.8rem;margin-top:8px;display:none}
+
+/* APP */
+#app{display:none}
+.header{background:linear-gradient(135deg,#1a1a2e,#0f3460);color:#fff;padding:16px 28px;display:flex;align-items:center;justify-content:space-between}
+.header h1{font-size:1.4rem;font-weight:700}
+.header-right{display:flex;align-items:center;gap:16px;font-size:0.82rem}
+.save-indicator{color:#a8d8a8;font-size:0.78rem}
+.logout-btn{background:rgba(255,255,255,0.15);border:none;color:#fff;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:0.8rem}
+.logout-btn:hover{background:rgba(255,255,255,0.25)}
+
+.nav{background:#fff;border-bottom:3px solid #0f3460;padding:0 28px;display:flex;gap:2px;overflow-x:auto}
+.nav-btn{padding:11px 18px;border:none;background:none;cursor:pointer;font-size:0.83rem;font-weight:600;color:#666;border-bottom:3px solid transparent;margin-bottom:-3px;white-space:nowrap;transition:all .2s}
+.nav-btn:hover{color:#0f3460}
+.nav-btn.active{color:#0f3460;border-bottom-color:#e74c3c}
+
+.container{max-width:1400px;margin:0 auto;padding:20px 28px}
+.tab-content{display:none}.tab-content.active{display:block}
+
+/* CARDS */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.kpi{background:#fff;border-radius:10px;padding:16px 20px;box-shadow:0 2px 10px rgba(0,0,0,0.07);border-left:4px solid #0f3460}
+.kpi.green{border-left-color:#27ae60}.kpi.red{border-left-color:#e74c3c}.kpi.orange{border-left-color:#f39c12}
+.kpi .lbl{font-size:0.72rem;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.8px}
+.kpi .val{font-size:1.5rem;font-weight:700;color:#1a1a2e;margin:3px 0}
+.kpi .sub{font-size:0.77rem;color:#666}
+
+/* SECTIONS */
+.card{background:#fff;border-radius:10px;padding:20px;box-shadow:0 2px 10px rgba(0,0,0,0.07);margin-bottom:18px}
+.card-title{font-size:.92rem;font-weight:700;color:#1a1a2e;border-bottom:2px solid #f0f2f5;padding-bottom:10px;margin-bottom:16px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.ch{position:relative;height:260px}
+.ch-tall{position:relative;height:300px}
+
+/* TABLES */
+table{width:100%;border-collapse:collapse;font-size:.82rem}
+thead tr{background:#1a1a2e;color:#fff}
+thead th{padding:9px 10px;text-align:right;font-weight:600;font-size:.75rem;text-transform:uppercase}
+thead th:first-child{text-align:left}
+tbody tr{border-bottom:1px solid #f0f2f5;transition:background .15s}
+tbody tr:hover{background:#f7f9fc}
+tbody td{padding:8px 10px;text-align:right}
+tbody td:first-child{text-align:left;font-weight:600}
+tfoot tr{background:#f0f2f5;font-weight:700;border-top:2px solid #ddd}
+tfoot td{padding:9px 10px;text-align:right}
+tfoot td:first-child{text-align:left}
+
+.up{background:#d5f5e3;color:#196f3d;padding:1px 7px;border-radius:10px;font-size:.74rem;font-weight:700}
+.dn{background:#fadbd8;color:#922b21;padding:1px 7px;border-radius:10px;font-size:.74rem;font-weight:700}
+.neu{background:#eaf2ff;color:#1a5276;padding:1px 7px;border-radius:10px;font-size:.74rem;font-weight:700}
+
+/* ENSAIO */
+.ensaio-tbl td{text-align:left!important;vertical-align:top;font-size:.8rem;line-height:1.5;border-left:1px solid #f0f2f5}
+.ensaio-tbl thead th{text-align:center!important}
+
+/* ADMIN */
+.admin-section{margin-bottom:28px}
+.admin-title{font-size:.9rem;font-weight:700;color:#0f3460;margin-bottom:10px;padding:8px 12px;background:#eaf2ff;border-radius:6px;display:flex;align-items:center;justify-content:space-between}
+[contenteditable]{outline:none;border-bottom:1px dashed #ccc;min-width:60px;display:inline-block}
+[contenteditable]:focus{border-bottom:1px solid #0f3460;background:#f0f8ff}
+.btn{padding:8px 16px;border:none;border-radius:6px;cursor:pointer;font-size:.82rem;font-weight:600;transition:opacity .2s}
+.btn:hover{opacity:.85}
+.btn-primary{background:#0f3460;color:#fff}
+.btn-success{background:#27ae60;color:#fff}
+.btn-danger{background:#e74c3c;color:#fff}
+.btn-orange{background:#f39c12;color:#fff}
+.import-zone{border:2px dashed #0f3460;border-radius:10px;padding:24px;text-align:center;cursor:pointer;background:#f8fbff;transition:background .2s}
+.import-zone:hover{background:#eaf2ff}
+.import-zone input{display:none}
+
+@media(max-width:900px){.kpi-grid{grid-template-columns:1fr 1fr}.grid2,.grid3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">📊</div>
+    <div class="login-title">Indicadores Gerenciais</div>
+    <div class="login-sub">Carlito · 2026</div>
+    <input type="email" id="loginEmail" placeholder="Email" autocomplete="email">
+    <input type="password" id="loginPass" placeholder="Senha" autocomplete="current-password">
+    <button class="login-btn" onclick="doLogin()">Entrar</button>
+    <div class="login-err" id="loginErr">Email ou senha incorretos.</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="header">
+    <h1>📊 Indicadores Gerenciais — Carlito 2026</h1>
+    <div class="header-right">
+      <span class="save-indicator" id="saveInd"></span>
+      <button class="logout-btn" onclick="doLogout()">Sair</button>
+    </div>
+  </div>
+  <div class="nav">
+    <button class="nav-btn active" onclick="showTab('vendas',this)">📈 Vendas</button>
+    <button class="nav-btn" onclick="showTab('logistica',this)">🚚 Logística</button>
+    <button class="nav-btn" onclick="showTab('estoque',this)">📦 Estoque</button>
+    <button class="nav-btn" onclick="showTab('cmv',this)">💰 CMV</button>
+    <button class="nav-btn" onclick="showTab('ensaio',this)">📝 Ensaio</button>
+    <button class="nav-btn" onclick="showTab('admin',this)">⚙️ Admin</button>
+  </div>
+
+  <div class="container">
+
+    <!-- VENDAS -->
+    <div id="tab-vendas" class="tab-content active">
+      <div class="kpi-grid" id="kpi-vendas"></div>
+      <div class="grid2">
+        <div class="card"><div class="card-title">Faturamento Mensal 2026 vs 2025</div><div class="ch-tall"><canvas id="chVendas"></canvas></div></div>
+        <div class="card"><div class="card-title">Variação % vs 2025</div><div class="ch-tall"><canvas id="chVendasPct"></canvas></div></div>
+      </div>
+      <div class="card"><div class="card-title">Tabela Vendas 2026</div><div id="tbl-vendas"></div></div>
+    </div>
+
+    <!-- LOGÍSTICA -->
+    <div id="tab-logistica" class="tab-content">
+      <div class="kpi-grid" id="kpi-log"></div>
+      <div class="grid2">
+        <div class="card"><div class="card-title">Taxa de Sucesso por Mês (%)</div><div class="ch-tall"><canvas id="chLogSuc"></canvas></div></div>
+        <div class="card"><div class="card-title">Tipos de Erro (jan–ago acumulado)</div><div class="ch-tall"><canvas id="chLogErros"></canvas></div></div>
+      </div>
+      <div class="card"><div class="card-title">Entregas — Sucesso e Erros por Mês</div><div id="tbl-log"></div></div>
+      <div class="card"><div class="card-title">Tipos de Erro por Mês</div><div id="tbl-log-erros"></div></div>
+    </div>
+
+    <!-- ESTOQUE -->
+    <div id="tab-estoque" class="tab-content">
+      <div class="kpi-grid" id="kpi-est"></div>
+      <div class="grid2">
+        <div class="card"><div class="card-title">Cubatão — Curva ABC (R$)</div><div class="ch-tall"><canvas id="chEstCub"></canvas></div></div>
+        <div class="card"><div class="card-title">Guarujá — Curva ABC (R$)</div><div class="ch-tall"><canvas id="chEstGua"></canvas></div></div>
+      </div>
+      <div class="grid2">
+        <div class="card"><div class="card-title">Tabela Estoque Cubatão</div><div id="tbl-cub"></div></div>
+        <div class="card"><div class="card-title">Tabela Estoque Guarujá</div><div id="tbl-gua"></div></div>
+      </div>
+    </div>
+
+    <!-- CMV -->
+    <div id="tab-cmv" class="tab-content">
+      <div class="kpi-grid" id="kpi-cmv"></div>
+      <div class="grid2">
+        <div class="card"><div class="card-title">CMV % Nota — 2026 vs 2025 vs Meta 60%</div><div class="ch-tall"><canvas id="chCmvPct"></canvas></div></div>
+        <div class="card"><div class="card-title">Faturamento vs Pedido vs CMV Nota</div><div class="ch-tall"><canvas id="chCmvVal"></canvas></div></div>
+      </div>
+      <div class="card"><div class="card-title">Tabela CMV 2026</div><div id="tbl-cmv"></div></div>
+    </div>
+
+    <!-- ENSAIO -->
+    <div id="tab-ensaio" class="tab-content">
+      <div class="card"><div class="card-title">Anotações Gerenciais Mensais 2026</div><div id="tbl-ensaio"></div></div>
+    </div>
+
+    <!-- ADMIN -->
+    <div id="tab-admin" class="tab-content">
+      <div class="card">
+        <div class="card-title">Importar Excel (.xlsx)</div>
+        <div class="import-zone" onclick="document.getElementById('xlsxInput').click()">
+          <input type="file" id="xlsxInput" accept=".xlsx,.xls" onchange="importExcel(this)">
+          <div style="font-size:2rem;margin-bottom:8px">📂</div>
+          <div style="font-weight:600;color:#0f3460">Clique para selecionar o arquivo</div>
+          <div style="font-size:.8rem;color:#888;margin-top:4px">Indicadores Gerenciais Carlito 2025.xlsx</div>
+        </div>
+        <div id="importStatus" style="margin-top:12px;font-size:.82rem;color:#27ae60"></div>
+      </div>
+
+      <div class="admin-section">
+        <div class="admin-title">
+          <span>📈 Vendas 2026 — Lançamento Mensal</span>
+          <button class="btn btn-success" onclick="save()">💾 Salvar tudo</button>
+        </div>
+        <div class="card" style="padding:0;overflow:auto">
+          <table id="adminVendas">
+            <thead><tr><th>Mês</th><th>Cubatão (R$)</th><th>Guarujá (R$)</th><th>Total (R$)</th><th>Ref 2025 (R$)</th><th>Meta (R$)</th></tr></thead>
+            <tbody id="adminVendasBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="admin-section">
+        <div class="admin-title"><span>🚚 Logística 2026</span></div>
+        <div class="card" style="padding:0;overflow:auto">
+          <table id="adminLog">
+            <thead><tr><th>Mês</th><th>Entregas</th><th>Corretas</th><th>Erros</th><th>Dev. R$</th><th>Endereço</th><th>Ausente</th><th>Venda Err.</th><th>Fechado</th><th>Desistiu</th><th>Separação</th></tr></thead>
+            <tbody id="adminLogBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="admin-section">
+        <div class="admin-title"><span>📦 Estoque Cubatão</span></div>
+        <div class="card" style="padding:0;overflow:auto">
+          <table><thead><tr><th>Mês</th><th>Curva A (R$)</th><th>Curva B (R$)</th><th>Curva C (R$)</th></tr></thead>
+          <tbody id="adminCubBody"></tbody></table>
+        </div>
+      </div>
+
+      <div class="admin-section">
+        <div class="admin-title"><span>📦 Estoque Guarujá</span></div>
+        <div class="card" style="padding:0;overflow:auto">
+          <table><thead><tr><th>Mês</th><th>Curva A (R$)</th><th>Curva B (R$)</th><th>Curva C (R$)</th></tr></thead>
+          <tbody id="adminGuaBody"></tbody></table>
+        </div>
+      </div>
+
+      <div class="admin-section">
+        <div class="admin-title"><span>💰 CMV 2026</span></div>
+        <div class="card" style="padding:0;overflow:auto">
+          <table><thead><tr><th>Mês</th><th>Faturamento</th><th>Pedido (R$)</th><th>CMV Nota (R$)</th><th>2025 Nota%</th></tr></thead>
+          <tbody id="adminCmvBody"></tbody></table>
+        </div>
+      </div>
+
+      <div class="admin-section">
+        <div class="admin-title"><span>📝 Ensaio — Anotações</span></div>
+        <div class="card" style="padding:0;overflow:auto">
+          <table><thead><tr><th>Mês</th><th>Vendas</th><th>Logística</th><th>Compras</th><th>Geral</th></tr></thead>
+          <tbody id="adminEnsaioBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /container -->
+</div><!-- /app -->
+
+<script>
+// ── SUPABASE ──────────────────────────────────────────────────────────────
+const SB_URL = 'https://pzjhmsfgzlasburqnssh.supabase.co';
+const SB_KEY = 'sb_publishable_P-N9RZtkcm_NvDlyTDTRKw_VPCzAJIE';
+const _sb = supabase.createClient(SB_URL, SB_KEY);
+let _user = null;
+
+// ── DEFAULT DATA ──────────────────────────────────────────────────────────
+const MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+const DEFAULT = {
+  vendas: [
+    {mes:'Janeiro',   cubatao:684386.56, guaruja:140780.62, total:825167.18, ref2025:1109184.66, meta:1242286.82},
+    {mes:'Fevereiro', cubatao:664280.40, guaruja:130451.71, total:794732.11, ref2025:971651.90,  meta:1088250.13},
+    {mes:'Março',     cubatao:684174.29, guaruja:171452.65, total:855626.94, ref2025:947140.02,  meta:1060796.82},
+    {mes:'Abril',     cubatao:798815.17, guaruja:166696.10, total:965511.27, ref2025:883665.51,  meta:989705.37},
+    {mes:'Maio',      cubatao:836019.95, guaruja:173699.68, total:1009719.63,ref2025:1060180.35, meta:1187401.99},
+    {mes:'Junho',     cubatao:879661.38, guaruja:192516.74, total:1072178.12,ref2025:990350.94,  meta:1109193.05},
+    {mes:'Julho',     cubatao:820789.73, guaruja:239915.04, total:1060704.77,ref2025:1107998.55, meta:1020000},
+    {mes:'Agosto',    cubatao:854589.44, guaruja:206959.53, total:1059583.89,ref2025:1112172.54, meta:1015000},
+    {mes:'Setembro',  cubatao:0, guaruja:0, total:0, ref2025:1094162.58, meta:0},
+    {mes:'Outubro',   cubatao:0, guaruja:0, total:0, ref2025:1137910.32, meta:0},
+    {mes:'Novembro',  cubatao:0, guaruja:0, total:0, ref2025:946713.57,  meta:0},
+    {mes:'Dezembro',  cubatao:0, guaruja:0, total:0, ref2025:816492.58,  meta:0},
+  ],
+  logistica: [
+    {mes:'Janeiro',   entregas:761,corretas:734,erros:27,dev:0,      ee:1,ea:10,ev:5, em:0,ef:3,ed:7,es:1},
+    {mes:'Fevereiro', entregas:601,corretas:588,erros:13,dev:0,      ee:1,ea:0, ev:5, em:0,ef:3,ed:2,es:2},
+    {mes:'Março',     entregas:721,corretas:704,erros:17,dev:8094.75,ee:1,ea:1, ev:7, em:0,ef:4,ed:4,es:0},
+    {mes:'Abril',     entregas:819,corretas:802,erros:17,dev:4963.68,ee:1,ea:4, ev:2, em:0,ef:4,ed:3,es:3},
+    {mes:'Maio',      entregas:812,corretas:792,erros:20,dev:4978.92,ee:3,ea:1, ev:6, em:0,ef:3,ed:4,es:3},
+    {mes:'Junho',     entregas:831,corretas:806,erros:25,dev:5671.49,ee:0,ea:4, ev:10,em:0,ef:3,ed:4,es:4},
+    {mes:'Julho',     entregas:830,corretas:810,erros:20,dev:5671.49,ee:0,ea:5, ev:5, em:0,ef:5,ed:3,es:2},
+    {mes:'Agosto',    entregas:777,corretas:759,erros:18,dev:4258.00,ee:2,ea:2, ev:6, em:0,ef:5,ed:2,es:1},
+    {mes:'Setembro',  entregas:0,corretas:0,erros:0,dev:0,ee:0,ea:0,ev:0,em:0,ef:0,ed:0,es:0},
+    {mes:'Outubro',   entregas:0,corretas:0,erros:0,dev:0,ee:0,ea:0,ev:0,em:0,ef:0,ed:0,es:0},
+    {mes:'Novembro',  entregas:0,corretas:0,erros:0,dev:0,ee:0,ea:0,ev:0,em:0,ef:0,ed:0,es:0},
+    {mes:'Dezembro',  entregas:0,corretas:0,erros:0,dev:0,ee:0,ea:0,ev:0,em:0,ef:0,ed:0,es:0},
+  ],
+  est_cub: [
+    {mes:'Janeiro',  a:651648.93,b:61421.11,c:518829.05},
+    {mes:'Fevereiro',a:560347.71,b:66481.11,c:518076.68},
+    {mes:'Março',    a:585244.72,b:63242.22,c:523518.62},
+    {mes:'Abril',    a:641447.30,b:37545.05,c:511213.96},
+    {mes:'Maio',     a:618637.57,b:33205.99,c:501975.66},
+    {mes:'Junho',    a:651903.33,b:50220.86,c:501816.31},
+    {mes:'Julho',    a:642422.51,b:49014.81,c:503248.01},
+    {mes:'Agosto',   a:530140.32,b:48708.71,c:501719.79},
+    {mes:'Setembro', a:0,b:0,c:0},{mes:'Outubro',a:0,b:0,c:0},{mes:'Novembro',a:0,b:0,c:0},{mes:'Dezembro',a:0,b:0,c:0},
+  ],
+  est_gua: [
+    {mes:'Janeiro',  a:231028.44,b:62538.71,c:57429.22},
+    {mes:'Fevereiro',a:209504.77,b:61514.85,c:57990.23},
+    {mes:'Março',    a:223666.41,b:49475.36,c:57596.58},
+    {mes:'Abril',    a:238920.90,b:34878.31,c:60787.19},
+    {mes:'Maio',     a:257430.63,b:37744.44,c:68568.34},
+    {mes:'Junho',    a:252346.75,b:55083.72,c:78476.56},
+    {mes:'Julho',    a:257376.29,b:53180.42,c:78473.09},
+    {mes:'Agosto',   a:261234.19,b:46482.28,c:79060.02},
+    {mes:'Setembro', a:0,b:0,c:0},{mes:'Outubro',a:0,b:0,c:0},{mes:'Novembro',a:0,b:0,c:0},{mes:'Dezembro',a:0,b:0,c:0},
+  ],
+  cmv: [
+    {mes:'Janeiro',  fat:815167.18, ped:409073.29, nota:299617.30, r25:0.5734},
+    {mes:'Fevereiro',fat:794732.11, ped:334553.73, nota:402418.20, r25:0.5522},
+    {mes:'Março',    fat:855626.94, ped:637983.75, nota:530276.33, r25:0.5744},
+    {mes:'Abril',    fat:965511.27, ped:689580.08, nota:602957.42, r25:0.6801},
+    {mes:'Maio',     fat:1009719.63,ped:618455.96, nota:631312.05, r25:0.6036},
+    {mes:'Junho',    fat:1072299.34,ped:668894.58, nota:684730.46, r25:0.5321},
+    {mes:'Julho',    fat:1060884.77,ped:680778.82, nota:678264.46, r25:0.6525},
+    {mes:'Agosto',   fat:1059583.89,ped:652619.01, nota:474735.85, r25:0.7056},
+    {mes:'Setembro', fat:0,ped:0,nota:0,r25:0.6364},
+    {mes:'Outubro',  fat:0,ped:0,nota:0,r25:0.5834},
+    {mes:'Novembro', fat:0,ped:0,nota:0,r25:0.6289},
+    {mes:'Dezembro', fat:0,ped:0,nota:0,r25:0.7800},
+  ],
+  ensaio: [
+    {mes:'Janeiro',  v:'Caímos 26% do faturamento, 31% com a inflação. Retirada do aparelho celular mexeu com o emocional. Linha amarela (maquinário) sob encomenda.',l:'WMS... Conferência cega de entrada. Balanço.',c:'Problemas com Mikael continuam. Pensar na sucessão. Começamos bem o CMV.',g:'Vocês precisam entrevistar mais.'},
+    {mes:'Fevereiro',v:'Oficina de sondagem? Líderes vão replicar o inside sales para a equipe.',l:'Dani no estoque. Precisamos vigiar.',c:'Cotações podem ser melhor trabalhadas por vendas e compras?',g:'Estamos pensando em um RH.'},
+    {mes:'Março',    v:'Ter no processo: "O senhor pode esperar uma cotação externa?"',l:'',c:'Não pode faltar peças de carreta curva 9 a 12.',g:''},
+    {mes:'Abril',    v:'',l:'',c:'',g:''},
+    {mes:'Maio',     v:'',l:'',c:'Estamos computando as NFs de consumo? Estamos no lucro real.',g:''},
+    {mes:'Junho',    v:'Continuamos com peças faltando de curva A. Falta de mão de obra de compras.',l:'',c:'',g:''},
+    {mes:'Julho',    v:'',l:'',c:'Michael no cadastro e Vinicius e Kátia em cotação externa?',g:''},
+    {mes:'Agosto',   v:'',l:'',c:'',g:''},
+    {mes:'Setembro', v:'',l:'',c:'',g:''},
+    {mes:'Outubro',  v:'',l:'',c:'',g:''},
+    {mes:'Novembro', v:'',l:'',c:'',g:''},
+    {mes:'Dezembro', v:'',l:'',c:'',g:''},
+  ]
+};
+
+let D = JSON.parse(JSON.stringify(DEFAULT));
+let _charts = {};
+
+// ── HELPERS ───────────────────────────────────────────────────────────────
+const R = (v,d=0) => (v||0).toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const RM = v => 'R$ ' + R(v);
+const PCT = v => (v*100).toFixed(1)+'%';
+const active = arr => arr.filter(r => r.total > 0 || r.cubatao > 0 || r.entregas > 0 || r.a > 0 || r.fat > 0);
+
+function pill(v, good='up') {
+  const cls = v > 0 ? 'up' : v < 0 ? 'dn' : 'neu';
+  const sign = v > 0 ? '▲' : v < 0 ? '▼' : '—';
+  return `<span class="${cls}">${sign} ${Math.abs(v).toFixed(1)}%</span>`;
+}
+
+function etd(val, cb) {
+  const span = document.createElement('span');
+  span.contentEditable = 'true';
+  span.textContent = val;
+  span.addEventListener('blur', () => { cb(span.textContent.replace(/[^\d.,-]/g,'')); });
+  const td = document.createElement('td');
+  td.appendChild(span);
+  return td;
+}
+function etdText(val, cb) {
+  const span = document.createElement('span');
+  span.contentEditable = 'true';
+  span.textContent = val;
+  span.style.minWidth = '120px';
+  span.addEventListener('blur', () => { cb(span.textContent); });
+  const td = document.createElement('td');
+  td.appendChild(span);
+  return td;
+}
+function num(s) { return parseFloat(String(s).replace(/[^\d.,-]/g,'').replace(',','.')) || 0; }
+
+// ── AUTH ──────────────────────────────────────────────────────────────────
+async function load() {
+  const hash = location.hash.slice(1);
+  if (hash.includes('@')) {
+    document.getElementById('loginEmail').value = hash;
+    document.getElementById('loginEmail').style.display = 'none';
+  }
+  const { data: { session } } = await _sb.auth.getSession();
+  if (session) await onLogin(session.user);
+}
+
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPass').value;
+  const err   = document.getElementById('loginErr');
+  err.style.display = 'none';
+  const { data, error } = await _sb.auth.signInWithPassword({ email, password: pass });
+  if (error) { err.style.display = 'block'; return; }
+  await onLogin(data.user);
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+async function onLogin(user) {
+  _user = user;
+  const { data: row } = await _sb.from('carlito').select('dados').eq('id', user.id).single();
+  if (row && row.dados) {
+    D = row.dados;
+    // ensure all 12 months exist in each array
+    for (const key of ['vendas','logistica','est_cub','est_gua','cmv','ensaio']) {
+      if (!D[key] || D[key].length < 12) D[key] = DEFAULT[key].map((def, i) => (D[key] && D[key][i]) ? D[key][i] : def);
+    }
+  } else {
+    D = JSON.parse(JSON.stringify(DEFAULT));
+    await saveToCloud();
+  }
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  renderAll();
+}
+
+async function doLogout() {
+  await _sb.auth.signOut();
+  location.reload();
+}
+
+// ── SAVE ──────────────────────────────────────────────────────────────────
+async function save() {
+  ind('💾 Salvando...');
+  try { localStorage.setItem('carlito_v1', JSON.stringify(D)); } catch(e) {}
+  const ok = await saveToCloud();
+  ind(ok ? '☁️ Salvo na nuvem' : '💾 Salvo localmente');
+  setTimeout(() => ind(''), 3000);
+  renderAll();
+}
+
+async function saveToCloud() {
+  if (!_user) return false;
+  const { error } = await _sb.from('carlito').upsert({ id: _user.id, dados: D });
+  return !error;
+}
+
+function ind(msg) { document.getElementById('saveInd').textContent = msg; }
+
+// ── TABS ──────────────────────────────────────────────────────────────────
+function showTab(name, btn) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+  // lazy chart init
+  setTimeout(() => renderCharts(name), 50);
+}
+
+// ── RENDER ALL ────────────────────────────────────────────────────────────
+function renderAll() {
+  renderVendasTable();
+  renderVendasKPI();
+  renderLogTable();
+  renderLogKPI();
+  renderEstTable();
+  renderEstKPI();
+  renderCmvTable();
+  renderCmvKPI();
+  renderEnsaio();
+  renderAdmin();
+  renderCharts('vendas');
+}
+
+// ── VENDAS ────────────────────────────────────────────────────────────────
+function renderVendasKPI() {
+  const rows = D.vendas.filter(r => r.total > 0);
+  const tot = rows.reduce((s,r) => s + r.total, 0);
+  const ref = rows.reduce((s,r) => s + (r.ref2025||0), 0);
+  const pct = ref ? (tot - ref) / ref * 100 : 0;
+  const cub = rows.reduce((s,r) => s + r.cubatao, 0);
+  const gua = rows.reduce((s,r) => s + r.guaruja, 0);
+  document.getElementById('kpi-vendas').innerHTML = `
+    <div class="kpi"><div class="lbl">Faturamento 2026 (acum.)</div><div class="val">${RM(tot)}</div><div class="sub">${rows.length} meses</div></div>
+    <div class="kpi ${pct>=0?'green':'red'}"><div class="lbl">vs 2025 (mesmo período)</div><div class="val">${pill(pct)}</div><div class="sub">2025: ${RM(ref)}</div></div>
+    <div class="kpi orange"><div class="lbl">Cubatão (acum.)</div><div class="val">${RM(cub)}</div><div class="sub">${tot ? (cub/tot*100).toFixed(1) : 0}% do total</div></div>
+    <div class="kpi green"><div class="lbl">Guarujá (acum.)</div><div class="val">${RM(gua)}</div><div class="sub">${tot ? (gua/tot*100).toFixed(1) : 0}% do total</div></div>`;
+}
+
+function renderVendasTable() {
+  const rows = D.vendas;
+  let html = `<table><thead><tr><th>Mês</th><th>Cubatão</th><th>Guarujá</th><th>Total 2026</th><th>Ref 2025</th><th>Meta</th><th>vs Meta</th><th>vs 2025</th></tr></thead><tbody>`;
+  rows.forEach(r => {
+    if (!r.total && !r.cubatao) { html += `<tr><td>${r.mes}</td><td colspan="7" style="color:#ccc;text-align:center">—</td></tr>`; return; }
+    const vm = r.meta ? ((r.total - r.meta) / r.meta * 100) : null;
+    const vr = r.ref2025 ? ((r.total - r.ref2025) / r.ref2025 * 100) : null;
+    html += `<tr><td>${r.mes}</td><td>${RM(r.cubatao)}</td><td>${RM(r.guaruja)}</td><td><strong>${RM(r.total)}</strong></td><td>${RM(r.ref2025)}</td><td>${r.meta ? RM(r.meta) : '—'}</td><td>${vm !== null ? pill(vm) : '—'}</td><td>${vr !== null ? pill(vr) : '—'}</td></tr>`;
+  });
+  const actv = rows.filter(r=>r.total>0);
+  const tot = actv.reduce((s,r)=>s+r.total,0);
+  const ref = actv.reduce((s,r)=>s+r.ref2025,0);
+  html += `</tbody><tfoot><tr><td>Total acumulado</td><td>${RM(actv.reduce((s,r)=>s+r.cubatao,0))}</td><td>${RM(actv.reduce((s,r)=>s+r.guaruja,0))}</td><td>${RM(tot)}</td><td>${RM(ref)}</td><td>—</td><td>—</td><td>${ref ? pill((tot-ref)/ref*100) : '—'}</td></tr></tfoot></table>`;
+  document.getElementById('tbl-vendas').innerHTML = html;
+}
+
+// ── LOGÍSTICA ─────────────────────────────────────────────────────────────
+function renderLogKPI() {
+  const rows = D.logistica.filter(r => r.entregas > 0);
+  const tot = rows.reduce((s,r)=>s+r.entregas,0);
+  const suc = rows.reduce((s,r)=>s+r.corretas,0);
+  const err = rows.reduce((s,r)=>s+r.erros,0);
+  const dev = rows.reduce((s,r)=>s+r.dev,0);
+  const pctSuc = tot ? (suc/tot*100) : 0;
+  document.getElementById('kpi-log').innerHTML = `
+    <div class="kpi green"><div class="lbl">Entregas Totais (acum.)</div><div class="val">${R(tot)}</div><div class="sub">Média: ${rows.length ? R(tot/rows.length,0) : 0}/mês</div></div>
+    <div class="kpi green"><div class="lbl">Taxa de Sucesso Média</div><div class="val">${pctSuc.toFixed(1)}%</div><div class="sub">Entregas corretas</div></div>
+    <div class="kpi red"><div class="lbl">Total de Erros (acum.)</div><div class="val">${R(err)}</div><div class="sub">Média: ${rows.length ? (err/rows.length).toFixed(1) : 0}/mês</div></div>
+    <div class="kpi orange"><div class="lbl">Devoluções com Valor</div><div class="val">${RM(dev)}</div><div class="sub">Acumulado</div></div>`;
+}
+
+function renderLogTable() {
+  const rows = D.logistica;
+  let html = `<table><thead><tr><th>Mês</th><th>Entregas</th><th>Corretas</th><th>% Sucesso</th><th>Erros</th><th>% Erro</th><th>Devoluções</th></tr></thead><tbody>`;
+  rows.forEach(r => {
+    if (!r.entregas) { html += `<tr><td>${r.mes}</td><td colspan="6" style="color:#ccc;text-align:center">—</td></tr>`; return; }
+    const ps = (r.corretas/r.entregas*100).toFixed(1);
+    const pe = (r.erros/r.entregas*100).toFixed(1);
+    html += `<tr><td>${r.mes}</td><td>${r.entregas}</td><td>${r.corretas}</td><td><span class="up">${ps}%</span></td><td>${r.erros}</td><td>${pe}%</td><td>${r.dev ? RM(r.dev) : '—'}</td></tr>`;
+  });
+  const a = rows.filter(r=>r.entregas>0);
+  html += `</tbody><tfoot><tr><td>Total/Média</td><td>${a.reduce((s,r)=>s+r.entregas,0)}</td><td>${a.reduce((s,r)=>s+r.corretas,0)}</td><td><strong>${a.reduce((s,r)=>s+r.entregas,0) ? (a.reduce((s,r)=>s+r.corretas,0)/a.reduce((s,r)=>s+r.entregas,0)*100).toFixed(1)+'%' : '—'}</strong></td><td>${a.reduce((s,r)=>s+r.erros,0)}</td><td>—</td><td>${RM(a.reduce((s,r)=>s+r.dev,0))}</td></tr></tfoot></table>`;
+  document.getElementById('tbl-log').innerHTML = html;
+
+  let h2 = `<table><thead><tr><th>Mês</th><th>Endereço</th><th>Ausente</th><th>Venda Err.</th><th>Manutenção</th><th>Local Fech.</th><th>Desistiu</th><th>Separação</th><th>Total</th></tr></thead><tbody>`;
+  rows.forEach(r => {
+    if (!r.entregas) return;
+    h2 += `<tr><td>${r.mes}</td><td>${r.ee}</td><td>${r.ea}</td><td>${r.ev}</td><td>${r.em}</td><td>${r.ef}</td><td>${r.ed}</td><td>${r.es}</td><td><strong>${r.erros}</strong></td></tr>`;
+  });
+  h2 += `</tbody><tfoot><tr><td>Total</td><td>${a.reduce((s,r)=>s+r.ee,0)}</td><td>${a.reduce((s,r)=>s+r.ea,0)}</td><td>${a.reduce((s,r)=>s+r.ev,0)}</td><td>${a.reduce((s,r)=>s+r.em,0)}</td><td>${a.reduce((s,r)=>s+r.ef,0)}</td><td>${a.reduce((s,r)=>s+r.ed,0)}</td><td>${a.reduce((s,r)=>s+r.es,0)}</td><td><strong>${a.reduce((s,r)=>s+r.erros,0)}</strong></td></tr></tfoot></table>`;
+  document.getElementById('tbl-log-erros').innerHTML = h2;
+}
+
+// ── ESTOQUE ───────────────────────────────────────────────────────────────
+function renderEstKPI() {
+  const cub = D.est_cub.filter(r=>r.a>0||r.b>0||r.c>0);
+  const gua = D.est_gua.filter(r=>r.a>0||r.b>0||r.c>0);
+  const avgTotCub = cub.length ? cub.reduce((s,r)=>s+r.a+r.b+r.c,0)/cub.length : 0;
+  const avgTotGua = gua.length ? gua.reduce((s,r)=>s+r.a+r.b+r.c,0)/gua.length : 0;
+  const avgApctCub = cub.length ? cub.reduce((s,r)=>{const t=r.a+r.b+r.c;return s+(t?r.a/t:0);},0)/cub.length*100 : 0;
+  const avgApctGua = gua.length ? gua.reduce((s,r)=>{const t=r.a+r.b+r.c;return s+(t?r.a/t:0);},0)/gua.length*100 : 0;
+  document.getElementById('kpi-est').innerHTML = `
+    <div class="kpi"><div class="lbl">Estoque Cubatão (média)</div><div class="val">${RM(avgTotCub)}</div><div class="sub">${cub.length} meses</div></div>
+    <div class="kpi orange"><div class="lbl">Curva A — Cubatão (média)</div><div class="val">${avgApctCub.toFixed(1)}%</div><div class="sub">Itens de alto giro</div></div>
+    <div class="kpi"><div class="lbl">Estoque Guarujá (média)</div><div class="val">${RM(avgTotGua)}</div><div class="sub">${gua.length} meses</div></div>
+    <div class="kpi green"><div class="lbl">Curva A — Guarujá (média)</div><div class="val">${avgApctGua.toFixed(1)}%</div><div class="sub">Itens de alto giro</div></div>`;
+}
+
+function renderEstTable() {
+  function makeTable(rows, id) {
+    let html = `<table><thead><tr><th>Mês</th><th>Curva A</th><th>Curva B</th><th>Curva C</th><th>Total</th><th>% A</th><th>% C</th></tr></thead><tbody>`;
+    rows.forEach(r => {
+      const t = r.a+r.b+r.c;
+      if (!t) { html += `<tr><td>${r.mes}</td><td colspan="6" style="color:#ccc;text-align:center">—</td></tr>`; return; }
+      html += `<tr><td>${r.mes}</td><td>${RM(r.a)}</td><td>${RM(r.b)}</td><td>${RM(r.c)}</td><td>${RM(t)}</td><td><span class="up">${(r.a/t*100).toFixed(1)}%</span></td><td>${(r.c/t*100).toFixed(1)}%</td></tr>`;
+    });
+    const a = rows.filter(r=>r.a+r.b+r.c>0);
+    const ta=a.reduce((s,r)=>s+r.a,0), tb=a.reduce((s,r)=>s+r.b,0), tc=a.reduce((s,r)=>s+r.c,0), tt=ta+tb+tc;
+    html += `</tbody><tfoot><tr><td>Média</td><td>${RM(a.length?ta/a.length:0)}</td><td>${RM(a.length?tb/a.length:0)}</td><td>${RM(a.length?tc/a.length:0)}</td><td>${RM(a.length?tt/a.length:0)}</td><td><strong>${tt?(ta/tt*100).toFixed(1)+'%':'—'}</strong></td><td><strong>${tt?(tc/tt*100).toFixed(1)+'%':'—'}</strong></td></tr></tfoot></table>`;
+    document.getElementById(id).innerHTML = html;
+  }
+  makeTable(D.est_cub, 'tbl-cub');
+  makeTable(D.est_gua, 'tbl-gua');
+}
+
+// ── CMV ───────────────────────────────────────────────────────────────────
+function renderCmvKPI() {
+  const rows = D.cmv.filter(r=>r.fat>0);
+  const totFat = rows.reduce((s,r)=>s+r.fat,0);
+  const totNota = rows.reduce((s,r)=>s+r.nota,0);
+  const avgPct = totFat ? (totNota/totFat*100) : 0;
+  const avg25 = rows.length ? rows.reduce((s,r)=>s+(r.r25||0),0)/rows.length*100 : 0;
+  document.getElementById('kpi-cmv').innerHTML = `
+    <div class="kpi ${avgPct<=60?'green':'orange'}"><div class="lbl">CMV Médio 2026 (% Nota/Fat.)</div><div class="val">${avgPct.toFixed(1)}%</div><div class="sub">Meta: 60%</div></div>
+    <div class="kpi green"><div class="lbl">CMV Médio 2025 (ref.)</div><div class="val">${avg25.toFixed(1)}%</div><div class="sub">Fechado</div></div>
+    <div class="kpi green"><div class="lbl">Faturamento (acum.)</div><div class="val">${RM(totFat)}</div><div class="sub">${rows.length} meses</div></div>
+    <div class="kpi ${avgPct<=60?'green':'orange'}"><div class="lbl">CMV Nota (acum.)</div><div class="val">${RM(totNota)}</div><div class="sub">Custo das mercadorias</div></div>`;
+}
+
+function renderCmvTable() {
+  let html = `<table><thead><tr><th>Mês</th><th>Faturamento</th><th>Pedido</th><th>CMV Nota</th><th>% Pedido</th><th>% Nota</th><th>2025 Nota%</th><th>vs Meta 60%</th></tr></thead><tbody>`;
+  D.cmv.forEach(r => {
+    if (!r.fat) { html += `<tr><td>${r.mes}</td><td colspan="7" style="color:#ccc;text-align:center">—</td></tr>`; return; }
+    const pp = r.fat ? r.ped/r.fat*100 : 0;
+    const pn = r.fat ? r.nota/r.fat*100 : 0;
+    const meta = pn <= 60;
+    html += `<tr><td>${r.mes}</td><td>${RM(r.fat)}</td><td>${RM(r.ped)}</td><td>${RM(r.nota)}</td><td>${pp.toFixed(1)}%</td><td class="${meta?'':''}"><strong style="color:${meta?'#27ae60':'#e74c3c'}">${pn.toFixed(1)}%</strong></td><td>${(r.r25*100).toFixed(1)}%</td><td><span class="${meta?'up':'dn'}">${meta?'✓ Abaixo':'↑ Acima'}</span></td></tr>`;
+  });
+  const a = D.cmv.filter(r=>r.fat>0);
+  const tf=a.reduce((s,r)=>s+r.fat,0), tn=a.reduce((s,r)=>s+r.nota,0);
+  html += `</tbody><tfoot><tr><td>Total</td><td>${RM(tf)}</td><td>${RM(a.reduce((s,r)=>s+r.ped,0))}</td><td>${RM(tn)}</td><td>—</td><td><strong>${tf?(tn/tf*100).toFixed(1)+'%':'—'}</strong></td><td>—</td><td>Meta: 60%</td></tr></tfoot></table>`;
+  document.getElementById('tbl-cmv').innerHTML = html;
+}
+
+// ── ENSAIO ────────────────────────────────────────────────────────────────
+function renderEnsaio() {
+  let html = `<table class="ensaio-tbl"><thead><tr><th style="width:70px">Mês</th><th style="color:#27ae60">📈 Vendas</th><th style="color:#3498db">🚚 Logística</th><th style="color:#9b59b6">🛒 Compras</th><th style="color:#e67e22">🏢 Geral</th></tr></thead><tbody>`;
+  D.ensaio.forEach((r,i) => {
+    html += `<tr style="${i%2?'':'background:#fafbff'}"><td style="font-weight:700">${r.mes}</td><td>${r.v||'—'}</td><td>${r.l||'—'}</td><td>${r.c||'—'}</td><td>${r.g||'—'}</td></tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('tbl-ensaio').innerHTML = html;
+}
+
+// ── ADMIN ─────────────────────────────────────────────────────────────────
+function renderAdmin() {
+  // Vendas
+  const vb = document.getElementById('adminVendasBody');
+  vb.innerHTML = '';
+  D.vendas.forEach((r,i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r.mes}</td>`;
+    tr.appendChild(etd(r.cubatao, v => { D.vendas[i].cubatao = num(v); D.vendas[i].total = D.vendas[i].cubatao + D.vendas[i].guaruja; }));
+    tr.appendChild(etd(r.guaruja, v => { D.vendas[i].guaruja = num(v); D.vendas[i].total = D.vendas[i].cubatao + D.vendas[i].guaruja; }));
+    tr.appendChild(etd(r.total, v => D.vendas[i].total = num(v)));
+    tr.appendChild(etd(r.ref2025, v => D.vendas[i].ref2025 = num(v)));
+    tr.appendChild(etd(r.meta, v => D.vendas[i].meta = num(v)));
+    vb.appendChild(tr);
+  });
+
+  // Logística
+  const lb = document.getElementById('adminLogBody');
+  lb.innerHTML = '';
+  D.logistica.forEach((r,i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r.mes}</td>`;
+    [['entregas',i,'entregas'],['corretas',i,'corretas'],['erros',i,'erros'],['dev',i,'dev'],
+     ['ee',i,'ee'],['ea',i,'ea'],['ev',i,'ev'],['ef',i,'ef'],['ed',i,'ed'],['es',i,'es']
+    ].forEach(([k]) => tr.appendChild(etd(r[k], v => D.logistica[i][k] = num(v))));
+    lb.appendChild(tr);
+  });
+
+  // Estoque Cubatão
+  const cb = document.getElementById('adminCubBody');
+  cb.innerHTML = '';
+  D.est_cub.forEach((r,i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r.mes}</td>`;
+    ['a','b','c'].forEach(k => tr.appendChild(etd(r[k], v => D.est_cub[i][k] = num(v))));
+    cb.appendChild(tr);
+  });
+
+  // Estoque Guarujá
+  const gb = document.getElementById('adminGuaBody');
+  gb.innerHTML = '';
+  D.est_gua.forEach((r,i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r.mes}</td>`;
+    ['a','b','c'].forEach(k => tr.appendChild(etd(r[k], v => D.est_gua[i][k] = num(v))));
+    gb.appendChild(tr);
+  });
+
+  // CMV
+  const cmvb = document.getElementById('adminCmvBody');
+  cmvb.innerHTML = '';
+  D.cmv.forEach((r,i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r.mes}</td>`;
+    ['fat','ped','nota','r25'].forEach(k => tr.appendChild(etd(r[k], v => D.cmv[i][k] = num(v))));
+    cmvb.appendChild(tr);
+  });
+
+  // Ensaio
+  const eb = document.getElementById('adminEnsaioBody');
+  eb.innerHTML = '';
+  D.ensaio.forEach((r,i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r.mes}</td>`;
+    ['v','l','c','g'].forEach(k => tr.appendChild(etdText(r[k], v => D.ensaio[i][k] = v)));
+    eb.appendChild(tr);
+  });
+}
+
+// ── CHARTS ────────────────────────────────────────────────────────────────
+function renderCharts(tab) {
+  if (tab === 'vendas') {
+    const rows = D.vendas.filter(r=>r.total>0);
+    const labels = rows.map(r=>r.mes.slice(0,3));
+    mkChart('chVendas','bar',{labels,datasets:[
+      {label:'2026',data:rows.map(r=>r.total),backgroundColor:'rgba(15,52,96,0.85)',borderRadius:5},
+      {label:'2025',data:rows.map(r=>r.ref2025),backgroundColor:'rgba(231,76,60,0.5)',borderRadius:5},
+    ]},{y:{ticks:{callback:v=>'R$'+Math.round(v/1000)+'K'}}});
+    mkChart('chVendasPct','line',{labels,datasets:[
+      {label:'% vs 2025',data:rows.map(r=>r.ref2025?(r.total-r.ref2025)/r.ref2025*100:null),borderColor:'#e74c3c',backgroundColor:'rgba(231,76,60,0.1)',borderWidth:2.5,tension:.4,fill:true,pointRadius:5},
+      {label:'Estável',data:rows.map(()=>0),borderColor:'#27ae60',borderDash:[6,4],borderWidth:1.5,pointRadius:0},
+    ]},{y:{ticks:{callback:v=>v+'%'}}});
+  }
+  if (tab === 'logistica') {
+    const rows = D.logistica.filter(r=>r.entregas>0);
+    const labels = rows.map(r=>r.mes.slice(0,3));
+    mkChart('chLogSuc','line',{labels,datasets:[
+      {label:'% Sucesso',data:rows.map(r=>r.corretas/r.entregas*100),borderColor:'#27ae60',backgroundColor:'rgba(39,174,96,0.1)',borderWidth:2.5,tension:.4,fill:true,pointRadius:5},
+      {label:'Meta 97%',data:rows.map(()=>97),borderColor:'#888',borderDash:[6,4],borderWidth:1,pointRadius:0},
+    ]},{y:{min:93,max:100,ticks:{callback:v=>v+'%'}}});
+    const errTotais = rows.reduce((acc,r)=>({ee:acc.ee+r.ee,ea:acc.ea+r.ea,ev:acc.ev+r.ev,ef:acc.ef+r.ef,ed:acc.ed+r.ed,es:acc.es+r.es}),{ee:0,ea:0,ev:0,ef:0,ed:0,es:0});
+    mkChart('chLogErros','doughnut',{labels:['Endereço','Cliente Ausente','Venda Errada','Local Fechado','Desistiu','Separação'],datasets:[{data:[errTotais.ee,errTotais.ea,errTotais.ev,errTotais.ef,errTotais.ed,errTotais.es],backgroundColor:['#3498db','#e74c3c','#f39c12','#9b59b6','#e67e22','#1abc9c'],borderWidth:2}]},{legend:{position:'right',labels:{font:{size:11}}}});
+  }
+  if (tab === 'estoque') {
+    const rc = D.est_cub.filter(r=>r.a+r.b+r.c>0), rg = D.est_gua.filter(r=>r.a+r.b+r.c>0);
+    mkChart('chEstCub','bar',{labels:rc.map(r=>r.mes.slice(0,3)),datasets:[
+      {label:'A',data:rc.map(r=>r.a),backgroundColor:'#27ae60',borderRadius:3},
+      {label:'B',data:rc.map(r=>r.b),backgroundColor:'#3498db',borderRadius:3},
+      {label:'C',data:rc.map(r=>r.c),backgroundColor:'#e74c3c',borderRadius:3},
+    ]},{scales:{x:{stacked:true},y:{stacked:true,ticks:{callback:v=>'R$'+Math.round(v/1000)+'K'}}}});
+    mkChart('chEstGua','bar',{labels:rg.map(r=>r.mes.slice(0,3)),datasets:[
+      {label:'A',data:rg.map(r=>r.a),backgroundColor:'#27ae60',borderRadius:3},
+      {label:'B',data:rg.map(r=>r.b),backgroundColor:'#3498db',borderRadius:3},
+      {label:'C',data:rg.map(r=>r.c),backgroundColor:'#e74c3c',borderRadius:3},
+    ]},{scales:{x:{stacked:true},y:{stacked:true,ticks:{callback:v=>'R$'+Math.round(v/1000)+'K'}}}});
+  }
+  if (tab === 'cmv') {
+    const rows = D.cmv.filter(r=>r.fat>0);
+    const labels = rows.map(r=>r.mes.slice(0,3));
+    mkChart('chCmvPct','line',{labels,datasets:[
+      {label:'CMV % Nota 2026',data:rows.map(r=>r.fat?r.nota/r.fat*100:null),borderColor:'#0f3460',backgroundColor:'rgba(15,52,96,0.1)',borderWidth:2.5,tension:.4,fill:true,pointRadius:5},
+      {label:'CMV % Nota 2025',data:rows.map(r=>r.r25*100),borderColor:'#e74c3c',borderDash:[4,4],borderWidth:2,tension:.4,pointRadius:4},
+      {label:'Meta 60%',data:rows.map(()=>60),borderColor:'#27ae60',borderDash:[6,4],borderWidth:1.5,pointRadius:0},
+    ]},{y:{ticks:{callback:v=>v+'%'}}});
+    mkChart('chCmvVal','bar',{labels,datasets:[
+      {label:'Faturamento',data:rows.map(r=>r.fat),backgroundColor:'rgba(15,52,96,0.7)',borderRadius:3},
+      {label:'Pedido',data:rows.map(r=>r.ped),backgroundColor:'rgba(243,156,18,0.7)',borderRadius:3},
+      {label:'CMV Nota',data:rows.map(r=>r.nota),backgroundColor:'rgba(231,76,60,0.7)',borderRadius:3},
+    ]},{y:{ticks:{callback:v=>'R$'+Math.round(v/1000)+'K'}}});
+  }
+}
+
+function mkChart(id, type, data, extraOpts={}) {
+  if (_charts[id]) { _charts[id].destroy(); }
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  const isDonut = type === 'doughnut';
+  _charts[id] = new Chart(ctx, {
+    type,
+    data,
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: isDonut ? 'right' : 'top', labels: { font: { size: 11 } }, ...((extraOpts.legend)||{}) } },
+      ...(isDonut ? {} : { scales: { y: { ticks: { callback: v => v }, ...((extraOpts.y)||{}) }, ...(extraOpts.scales||{}) } }),
+      ...extraOpts,
+    }
+  });
+}
+
+// ── EXCEL IMPORT ──────────────────────────────────────────────────────────
+function importExcel(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const status = document.getElementById('importStatus');
+  status.textContent = '⏳ Lendo arquivo...';
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      let imported = [];
+
+      // --- VENDAS 2026 (sheet "Vendas 2025 - 26") ---
+      const wsV = wb.Sheets['Vendas 2025 - 26'];
+      if (wsV) {
+        const rows = XLSX.utils.sheet_to_json(wsV, { header: 1 });
+        // Find row with "2026" header
+        let startIdx = -1;
+        for (let i = 0; i < rows.length; i++) {
+          if (String(rows[i][0]).includes('2026') || rows[i][0] === 2026) { startIdx = i + 1; break; }
+        }
+        if (startIdx > 0) {
+          for (let i = startIdx; i < rows.length; i++) {
+            const r = rows[i];
+            const mesName = String(r[0] || '').trim();
+            if (!mesName || mesName === 'Total' || mesName === 'Média') break;
+            const idx = MESES.findIndex(m => m.toLowerCase().startsWith(mesName.toLowerCase().slice(0,3)));
+            if (idx < 0) continue;
+            const cub = parseFloat(String(r[1]).replace(/[^\d.,-]/g,'').replace(',','.')) || 0;
+            const gua = parseFloat(String(r[2]).replace(/[^\d.,-]/g,'').replace(',','.')) || 0;
+            const tot = parseFloat(String(r[3]).replace(/[^\d.,-]/g,'').replace(',','.')) || 0;
+            const ref = parseFloat(String(r[4]).replace(/[^\d.,-]/g,'').replace(',','.')) || 0;
+            const meta = parseFloat(String(r[5]).replace(/[^\d.,-]/g,'').replace(',','.')) || 0;
+            if (cub > 0 || gua > 0) {
+              D.vendas[idx] = { mes: MESES[idx], cubatao: cub, guaruja: gua, total: tot || cub + gua, ref2025: ref, meta: meta };
+              imported.push('Vendas: ' + MESES[idx]);
+            }
+          }
+        }
+      }
+
+      // --- LOGÍSTICA (sheet "LOG26") ---
+      const wsL = wb.Sheets['LOG26'];
+      if (wsL) {
+        const rows = XLSX.utils.sheet_to_json(wsL, { header: 1 });
+        for (let i = 1; i < rows.length; i++) {
+          const r = rows[i];
+          const mesName = String(r[0] || '').trim();
+          if (!mesName || mesName === 'Total' || mesName === 'Média' || mesName === 'Erros') break;
+          const idx = MESES.findIndex(m => m.toLowerCase().startsWith(mesName.toLowerCase().slice(0,3)));
+          if (idx < 0) continue;
+          const ent = parseInt(r[1]) || 0;
+          const cor = parseInt(r[2]) || 0;
+          const err = parseInt(r[4]) || 0;
+          if (ent > 0) {
+            D.logistica[idx].entregas = ent;
+            D.logistica[idx].corretas = cor;
+            D.logistica[idx].erros = err;
+            imported.push('Log: ' + MESES[idx]);
+          }
+        }
+        // Erros table (after "Erros" header row)
+        let errStart = -1;
+        for (let i = 0; i < rows.length; i++) {
+          if (String(rows[i][0]).toLowerCase() === 'erros') { errStart = i + 1; break; }
+        }
+        if (errStart > 0) {
+          for (let i = errStart; i < rows.length; i++) {
+            const r = rows[i];
+            const mesName = String(r[0] || '').trim();
+            if (!mesName || mesName === 'Total' || mesName === 'Média') break;
+            const idx = MESES.findIndex(m => m.toLowerCase().startsWith(mesName.toLowerCase().slice(0,3)));
+            if (idx < 0) continue;
+            D.logistica[idx].ee = parseInt(r[1]) || 0;
+            D.logistica[idx].ea = parseInt(r[2]) || 0;
+            D.logistica[idx].ev = parseInt(r[3]) || 0;
+            D.logistica[idx].em = parseInt(r[4]) || 0;
+            D.logistica[idx].ef = parseInt(r[5]) || 0;
+            D.logistica[idx].ed = parseInt(r[6]) || 0;
+            D.logistica[idx].es = parseInt(r[7]) || 0;
+          }
+        }
+      }
+
+      // --- ENSAIO ---
+      const wsE = wb.Sheets['Ensaio'];
+      if (wsE) {
+        const rows = XLSX.utils.sheet_to_json(wsE, { header: 1 });
+        for (let i = 1; i < rows.length; i++) {
+          const r = rows[i];
+          const mesName = String(r[0] || '').trim();
+          if (!mesName) continue;
+          const idx = MESES.findIndex(m => m.toLowerCase().startsWith(mesName.toLowerCase().slice(0,3)));
+          if (idx < 0) continue;
+          D.ensaio[idx].v = String(r[1] || '');
+          D.ensaio[idx].l = String(r[2] || '');
+          D.ensaio[idx].c = String(r[3] || '');
+          D.ensaio[idx].g = String(r[4] || '');
+        }
+      }
+
+      if (imported.length > 0) {
+        status.textContent = '✅ Importado: ' + imported.length + ' entradas. Clique em Salvar.';
+        renderAll();
+      } else {
+        status.textContent = '⚠️ Nenhum dado reconhecido. Verifique o arquivo.';
+      }
+    } catch(err) {
+      status.textContent = '❌ Erro ao ler arquivo: ' + err.message;
+    }
+    input.value = '';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+load();
+</script>
+</body>
+</html>
