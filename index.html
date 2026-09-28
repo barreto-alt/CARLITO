@@ -442,34 +442,29 @@ function etdText(val, cb) {
 function num(s) { return parseFloat(String(s).replace(/[^\d.,-]/g,'').replace(',','.')) || 0; }
 
 // ── AUTH ──────────────────────────────────────────────────────────────────
+const FIXED_ID = '15be1757-ac1b-4b31-82a1-e25a1e9f38bb';
+const SENHA = 'Barreto123';
+
 async function load() {
-  const hash = location.hash.slice(1);
-  if (hash.includes('@')) {
-    document.getElementById('loginEmail').value = hash;
-    document.getElementById('loginEmail').style.display = 'none';
-  }
-  const { data: { session } } = await _sb.auth.getSession();
-  if (session) await onLogin(session.user);
+  const saved = localStorage.getItem('carlito_logado');
+  if (saved === '1') await onLogin();
 }
 
 async function doLogin() {
-  const email = document.getElementById('loginEmail').value.trim();
-  const pass  = document.getElementById('loginPass').value;
-  const err   = document.getElementById('loginErr');
+  const pass = document.getElementById('loginPass').value;
+  const err  = document.getElementById('loginErr');
   err.style.display = 'none';
-  const { data, error } = await _sb.auth.signInWithPassword({ email, password: pass });
-  if (error) { err.style.display = 'block'; return; }
-  await onLogin(data.user);
+  if (pass !== SENHA) { err.style.display = 'block'; return; }
+  localStorage.setItem('carlito_logado', '1');
+  await onLogin();
 }
 
 document.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
-async function onLogin(user) {
-  _user = user;
-  const { data: row } = await _sb.from('carlito').select('dados').eq('id', user.id).single();
+async function onLogin() {
+  const { data: row } = await _sb.from('carlito').select('dados').eq('id', FIXED_ID).single();
   if (row && row.dados) {
     D = row.dados;
-    // ensure all 12 months exist in each array
     D.saldo_hist = DEFAULT.saldo_hist;
     D.saldo_2026 = DEFAULT.saldo_2026;
     for (const key of ['vendas','logistica','est_cub','est_gua','cmv','ensaio']) {
@@ -484,8 +479,8 @@ async function onLogin(user) {
   renderAll();
 }
 
-async function doLogout() {
-  await _sb.auth.signOut();
+function doLogout() {
+  localStorage.removeItem('carlito_logado');
   location.reload();
 }
 
@@ -500,8 +495,7 @@ async function save() {
 }
 
 async function saveToCloud() {
-  if (!_user) return false;
-  const { error } = await _sb.from('carlito').upsert({ id: _user.id, dados: D });
+  const { error } = await _sb.from('carlito').upsert({ id: FIXED_ID, dados: D });
   return !error;
 }
 
