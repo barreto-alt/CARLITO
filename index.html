@@ -136,7 +136,7 @@ tfoot td:first-child{text-align:left}
       <div class="kpi-grid" id="kpi-vendas"></div>
       <div class="grid2">
         <div class="card"><div class="card-title">Faturamento Mensal 2026 vs 2025</div><div class="ch-tall"><canvas id="chVendas"></canvas></div></div>
-        <div class="card"><div class="card-title">Variação % vs 2025</div><div class="ch-tall"><canvas id="chVendasPct"></canvas></div></div>
+        <div class="card"><div class="card-title">2025 vs 2026 — Faturamento Mensal</div><div class="ch-tall"><canvas id="chVendasPct"></canvas></div></div>
       </div>
       <div class="card"><div class="card-title">Tabela Vendas 2026</div><div id="tbl-vendas"></div></div>
     </div>
@@ -666,8 +666,8 @@ function renderCmvTable() {
     html += `<tr><td>${r.mes}</td><td>${RM(r.fat)}</td><td>${RM(r.ped)}</td><td>${RM(r.nota)}</td><td>${pp.toFixed(1)}%</td><td class="${meta?'':''}"><strong style="color:${meta?'#27ae60':'#e74c3c'}">${pn.toFixed(1)}%</strong></td><td>${(r.r25*100).toFixed(1)}%</td><td><span class="${meta?'up':'dn'}">${meta?'✓ Abaixo':'↑ Acima'}</span></td></tr>`;
   });
   const a = D.cmv.filter(r=>r.fat>0);
-  const tf=a.reduce((s,r)=>s+r.fat,0), tn=a.reduce((s,r)=>s+r.nota,0);
-  html += `</tbody><tfoot><tr><td>Total</td><td>${RM(tf)}</td><td>${RM(a.reduce((s,r)=>s+r.ped,0))}</td><td>${RM(tn)}</td><td>—</td><td><strong>${tf?(tn/tf*100).toFixed(1)+'%':'—'}</strong></td><td>—</td><td>Meta: 60%</td></tr></tfoot></table>`;
+  const tf=a.reduce((s,r)=>s+r.fat,0), tn=a.reduce((s,r)=>s+r.nota,0), tp=a.reduce((s,r)=>s+r.ped,0);
+  html += `</tbody><tfoot><tr><td>Total</td><td>${RM(tf)}</td><td>${RM(tp)}</td><td>${RM(tn)}</td><td><strong>${tf?(tp/tf*100).toFixed(1)+'%':'—'}</strong></td><td><strong>${tf?(tn/tf*100).toFixed(1)+'%':'—'}</strong></td><td>—</td><td>Meta: 60%</td></tr></tfoot></table>`;
   document.getElementById('tbl-cmv').innerHTML = html;
 }
 
@@ -793,10 +793,14 @@ function renderCharts(tab) {
       {label:'2026',data:rows.map(r=>r.total),backgroundColor:'rgba(15,52,96,0.85)',borderRadius:5},
       {label:'2025',data:rows.map(r=>r.ref2025),backgroundColor:'rgba(231,76,60,0.5)',borderRadius:5},
     ]},{y:{ticks:{callback:v=>'R$'+Math.round(v/1000)+'K'}}});
-    mkChart('chVendasPct','line',{labels,datasets:[
-      {label:'% vs 2025',data:rows.map(r=>r.ref2025?(r.total-r.ref2025)/r.ref2025*100:null),borderColor:'#e74c3c',backgroundColor:'rgba(231,76,60,0.1)',borderWidth:2.5,tension:.4,fill:true,pointRadius:5},
-      {label:'Estável',data:rows.map(()=>0),borderColor:'#27ae60',borderDash:[6,4],borderWidth:1.5,pointRadius:0},
-    ]},{y:{ticks:{callback:v=>v+'%'}}});
+    // Use all 12 months as labels, filling zeros for months without 2026 data
+    const allLabels = D.vendas.map(r=>r.mes.slice(0,3));
+    const d26 = D.vendas.map(r=>r.total>0?r.total:null);
+    const d25 = D.vendas.map(r=>r.ref2025>0?r.ref2025:null);
+    mkChart('chVendasPct','line',{labels:allLabels,datasets:[
+      {label:'2026',data:d26,borderColor:'#0f3460',backgroundColor:'rgba(15,52,96,0.08)',borderWidth:2.5,tension:.4,fill:false,pointRadius:5,pointBackgroundColor:'#0f3460'},
+      {label:'2025',data:d25,borderColor:'#e74c3c',backgroundColor:'rgba(231,76,60,0.08)',borderWidth:2,tension:.4,fill:false,pointRadius:4,borderDash:[5,3],pointBackgroundColor:'#e74c3c'},
+    ]},{y:{ticks:{callback:v=>'R$'+Math.round(v/1000)+'K'}}});
   }
   if (tab === 'logistica') {
     const rows = D.logistica.filter(r=>r.entregas>0);
