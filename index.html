@@ -160,6 +160,10 @@ tfoot td:first-child{text-align:left}
         <div class="card"><div class="card-title">Guarujá — Curva ABC (R$)</div><div class="ch-tall"><canvas id="chEstGua"></canvas></div></div>
       </div>
       <div class="grid2">
+        <div class="card"><div class="card-title">Cubatão — Total Estoque Histórico</div><div class="ch-tall"><canvas id="chEstCubHist"></canvas></div></div>
+        <div class="card"><div class="card-title">Guarujá — Total Estoque Histórico</div><div class="ch-tall"><canvas id="chEstGuaHist"></canvas></div></div>
+      </div>
+      <div class="grid2">
         <div class="card"><div class="card-title">Tabela Estoque Cubatão</div><div id="tbl-cub"></div></div>
         <div class="card"><div class="card-title">Tabela Estoque Guarujá</div><div id="tbl-gua"></div></div>
       </div>
@@ -169,7 +173,7 @@ tfoot td:first-child{text-align:left}
     <div id="tab-cmv" class="tab-content">
       <div class="kpi-grid" id="kpi-cmv"></div>
       <div class="grid2">
-        <div class="card"><div class="card-title">CMV % Nota — 2026 vs 2025 vs Meta 60%</div><div class="ch-tall"><canvas id="chCmvPct"></canvas></div></div>
+        <div class="card"><div class="card-title">CMV % Nota — 2024 / 2025 / 2026 vs Meta 60%</div><div class="ch-tall"><canvas id="chCmvPct"></canvas></div></div>
         <div class="card"><div class="card-title">Faturamento vs Pedido vs CMV Nota</div><div class="ch-tall"><canvas id="chCmvVal"></canvas></div></div>
       </div>
       <div class="card"><div class="card-title">Tabela CMV 2026</div><div id="tbl-cmv"></div></div>
@@ -811,10 +815,16 @@ function renderCharts(tab) {
   if (tab === 'logistica') {
     const rows = D.logistica.filter(r=>r.entregas>0);
     const labels = rows.map(r=>r.mes.slice(0,3));
-    mkChart('chLogSuc','line',{labels,datasets:[
-      {label:'% Sucesso',data:rows.map(r=>r.corretas/r.entregas*100),borderColor:'#27ae60',backgroundColor:'rgba(39,174,96,0.1)',borderWidth:2.5,tension:.4,fill:true,pointRadius:5},
-      {label:'Meta 97%',data:rows.map(()=>97),borderColor:'#888',borderDash:[6,4],borderWidth:1,pointRadius:0},
-    ]},{y:{min:93,max:100,ticks:{callback:v=>v+'%'}}});
+    const logLabels = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const log24 = [94.77,95.50,94.91,95.64,95.73,96.07,94.79,97.21,95.39,96.47,97.50,96.81];
+    const log25 = [96.21,95.77,96.85,96.35,97.84,97.14,97.66,97.16,96.82,97.63,97.24,98.10];
+    const log26 = D.logistica.map(r=>r.entregas>0?(r.corretas/r.entregas*100):null);
+    mkChart('chLogSuc','line',{labels:logLabels,datasets:[
+      {label:'2024',data:log24,borderColor:'#9b59b6',borderWidth:1.5,tension:.4,fill:false,pointRadius:3,borderDash:[3,3],pointBackgroundColor:'#9b59b6'},
+      {label:'2025',data:log25,borderColor:'#e74c3c',borderWidth:2,tension:.4,fill:false,pointRadius:4,pointBackgroundColor:'#e74c3c'},
+      {label:'2026',data:log26,borderColor:'#27ae60',backgroundColor:'rgba(39,174,96,0.08)',borderWidth:3,tension:.4,fill:false,pointRadius:5,pointBackgroundColor:'#27ae60'},
+      {label:'Meta 97%',data:logLabels.map(()=>97),borderColor:'#888',borderDash:[6,4],borderWidth:1,pointRadius:0},
+    ]},{y:{min:92,max:100,ticks:{callback:v=>v+'%'}}});
     const errTotais = rows.reduce((acc,r)=>({ee:acc.ee+r.ee,ea:acc.ea+r.ea,ev:acc.ev+r.ev,ef:acc.ef+r.ef,ed:acc.ed+r.ed,es:acc.es+r.es}),{ee:0,ea:0,ev:0,ef:0,ed:0,es:0});
     mkChart('chLogErros','doughnut',{labels:['Endereço','Cliente Ausente','Venda Errada','Local Fechado','Desistiu','Separação'],datasets:[{data:[errTotais.ee,errTotais.ea,errTotais.ev,errTotais.ef,errTotais.ed,errTotais.es],backgroundColor:['#3498db','#e74c3c','#f39c12','#9b59b6','#e67e22','#1abc9c'],borderWidth:2}]},{legend:{position:'right',labels:{font:{size:11}}}});
   }
@@ -830,6 +840,26 @@ function renderCharts(tab) {
       {label:'B',data:rg.map(r=>r.b),backgroundColor:'#3498db',borderRadius:3},
       {label:'C',data:rg.map(r=>r.c),backgroundColor:'#e74c3c',borderRadius:3},
     ]},{scales:{x:{stacked:true},y:{stacked:true,ticks:{callback:v=>'R$'+Math.round(v/1000)+'K'}}}});
+    // Historical totals Cubatão (A+B+C)
+    const estLabels = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const cub24tot = [1391564.74,1405116.37,1399953.68,1386823.79,1457568.23,1407601.37,1328771.85,1261592.25,1479439.32,1265021.54,1560107.34,1509505.48];
+    const cub25tot = [null,1350804.81,1338133.63,1398765.53,1387790.15,1397993.68,1336787.59,1387675.14,1321434.17,1339849.45,1315750.07,1277890.33];
+    const cub26tot = D.est_cub.map(r=>(r.a+r.b+r.c)>0?(r.a+r.b+r.c):null);
+    mkChart('chEstCubHist','line',{labels:estLabels,datasets:[
+      {label:'2024',data:cub24tot,borderColor:'#9b59b6',borderWidth:1.5,tension:.4,fill:false,pointRadius:3,borderDash:[3,3],pointBackgroundColor:'#9b59b6'},
+      {label:'2025',data:cub25tot,borderColor:'#e74c3c',borderWidth:2,tension:.4,fill:false,pointRadius:4,pointBackgroundColor:'#e74c3c'},
+      {label:'2026',data:cub26tot,borderColor:'#0f3460',borderWidth:3,tension:.4,fill:false,pointRadius:5,pointBackgroundColor:'#0f3460'},
+    ]},{y:{ticks:{callback:v=>'R$'+Math.round(v/1000)+'K'}}});
+    // Historical totals Guarujá
+    const gua24tot = [null,null,null,null,null,null,null,null,null,null,null,null]; // not available in excel
+    const gua25tot = [null,null,null,null,null,null,null,null,null,null,null,null];
+    // ADM 26 has guarujá rows 20-27
+    const gua26cub = [350996.37,329782.89,330786.93,333601.78,363432.26,385907.03,389872.79,null,null,null,null,null];
+    const gua26tot = D.est_gua.map(r=>(r.a+r.b+r.c)>0?(r.a+r.b+r.c):null);
+    mkChart('chEstGuaHist','line',{labels:estLabels,datasets:[
+      {label:'2026',data:gua26tot,borderColor:'#0f3460',borderWidth:3,tension:.4,fill:false,pointRadius:5,pointBackgroundColor:'#0f3460'},
+      {label:'Ref ADM26',data:gua26cub,borderColor:'#e74c3c',borderWidth:1.5,tension:.4,fill:false,pointRadius:3,borderDash:[3,3],pointBackgroundColor:'#e74c3c'},
+    ]},{y:{ticks:{callback:v=>'R$'+Math.round(v/1000)+'K'}}});
   }
   if (tab === 'financeiro') {
     const hist = D.saldo_hist;
@@ -844,10 +874,15 @@ function renderCharts(tab) {
   if (tab === 'cmv') {
     const rows = D.cmv.filter(r=>r.fat>0);
     const labels = rows.map(r=>r.mes.slice(0,3));
-    mkChart('chCmvPct','line',{labels,datasets:[
-      {label:'CMV % Nota 2026',data:rows.map(r=>r.fat?r.nota/r.fat*100:null),borderColor:'#0f3460',backgroundColor:'rgba(15,52,96,0.1)',borderWidth:2.5,tension:.4,fill:true,pointRadius:5},
-      {label:'CMV % Nota 2025',data:rows.map(r=>r.r25*100),borderColor:'#e74c3c',borderDash:[4,4],borderWidth:2,tension:.4,pointRadius:4},
-      {label:'Meta 60%',data:rows.map(()=>60),borderColor:'#27ae60',borderDash:[6,4],borderWidth:1.5,pointRadius:0},
+    const cmvLabels = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const cmv24 = [54.58,59.43,59.34,60.0,74.02,53.21,68.71,53.58,85.50,48.28,101.78,109.14];
+    const cmv25 = [57.34,55.22,57.44,68.01,60.36,53.21,65.25,70.56,null,58.34,62.89,78.0];
+    const cmv26 = D.cmv.map(r=>r.fat>0?(r.nota/r.fat*100):null);
+    mkChart('chCmvPct','line',{labels:cmvLabels,datasets:[
+      {label:'2024',data:cmv24,borderColor:'#9b59b6',borderWidth:1.5,tension:.4,fill:false,pointRadius:3,borderDash:[3,3],pointBackgroundColor:'#9b59b6'},
+      {label:'2025',data:cmv25,borderColor:'#e74c3c',borderWidth:2,tension:.4,fill:false,pointRadius:4,pointBackgroundColor:'#e74c3c'},
+      {label:'2026',data:cmv26,borderColor:'#0f3460',backgroundColor:'rgba(15,52,96,0.08)',borderWidth:3,tension:.4,fill:false,pointRadius:5,pointBackgroundColor:'#0f3460'},
+      {label:'Meta 60%',data:cmvLabels.map(()=>60),borderColor:'#27ae60',borderDash:[6,4],borderWidth:1.5,pointRadius:0},
     ]},{y:{ticks:{callback:v=>v+'%'}}});
     mkChart('chCmvVal','bar',{labels,datasets:[
       {label:'Faturamento',data:rows.map(r=>r.fat),backgroundColor:'rgba(15,52,96,0.7)',borderRadius:3},
