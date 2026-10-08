@@ -793,13 +793,19 @@ function renderCharts(tab) {
       {label:'2026',data:rows.map(r=>r.total),backgroundColor:'rgba(15,52,96,0.85)',borderRadius:5},
       {label:'2025',data:rows.map(r=>r.ref2025),backgroundColor:'rgba(231,76,60,0.5)',borderRadius:5},
     ]},{y:{ticks:{callback:v=>'R$'+Math.round(v/1000)+'K'}}});
-    // Use all 12 months as labels, filling zeros for months without 2026 data
-    const allLabels = D.vendas.map(r=>r.mes.slice(0,3));
-    const d26 = D.vendas.map(r=>r.total>0?r.total:null);
+    // Multi-year comparison line chart
+    const allLabels = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    const d22 = [620082.48,633339.0,756340.12,561263.65,661145.56,591614.25,654167.72,671708.25,670804.3,673748.66,659745.83,641182.4];
+    const d23 = [596074.44,520872.09,696125.57,593613.84,745144.96,711905.06,682124.89,779638.81,660584.54,743836.92,673869.23,710740.12];
+    const d24 = [801411.0,666189.0,732975.6,916578.51,885864.0,895403.16,888540.4,850000.0,872433.0,1016000.0,876524.35,784840.0];
     const d25 = D.vendas.map(r=>r.ref2025>0?r.ref2025:null);
+    const d26 = D.vendas.map(r=>r.total>0?r.total:null);
     mkChart('chVendasPct','line',{labels:allLabels,datasets:[
-      {label:'2026',data:d26,borderColor:'#0f3460',backgroundColor:'rgba(15,52,96,0.08)',borderWidth:2.5,tension:.4,fill:false,pointRadius:5,pointBackgroundColor:'#0f3460'},
-      {label:'2025',data:d25,borderColor:'#e74c3c',backgroundColor:'rgba(231,76,60,0.08)',borderWidth:2,tension:.4,fill:false,pointRadius:4,borderDash:[5,3],pointBackgroundColor:'#e74c3c'},
+      {label:'2022',data:d22,borderColor:'#95a5a6',borderWidth:1.5,tension:.4,fill:false,pointRadius:3,borderDash:[3,3],pointBackgroundColor:'#95a5a6'},
+      {label:'2023',data:d23,borderColor:'#f39c12',borderWidth:1.5,tension:.4,fill:false,pointRadius:3,borderDash:[3,3],pointBackgroundColor:'#f39c12'},
+      {label:'2024',data:d24,borderColor:'#9b59b6',borderWidth:2,tension:.4,fill:false,pointRadius:4,pointBackgroundColor:'#9b59b6'},
+      {label:'2025',data:d25,borderColor:'#e74c3c',borderWidth:2,tension:.4,fill:false,pointRadius:4,pointBackgroundColor:'#e74c3c'},
+      {label:'2026',data:d26,borderColor:'#0f3460',borderWidth:3,tension:.4,fill:false,pointRadius:5,pointBackgroundColor:'#0f3460'},
     ]},{y:{ticks:{callback:v=>'R$'+Math.round(v/1000)+'K'}}});
   }
   if (tab === 'logistica') {
