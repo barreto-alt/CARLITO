@@ -467,9 +467,21 @@ async function onLogin() {
     D = row.dados;
     D.saldo_hist = DEFAULT.saldo_hist;
     D.saldo_2026 = DEFAULT.saldo_2026;
-    for (const key of ['vendas','logistica','est_cub','est_gua','cmv','ensaio']) {
-      if (!D[key] || D[key].length < 12) D[key] = DEFAULT[key].map((def, i) => (D[key] && D[key][i]) ? D[key][i] : def);
-    }
+    // Merge: prefer Supabase values but use DEFAULT when Supabase has zeros and DEFAULT has data
+    ['vendas','logistica','est_cub','est_gua','cmv','ensaio'].forEach(key => {
+      if (!D[key] || D[key].length < 12) { D[key] = DEFAULT[key]; return; }
+      D[key] = DEFAULT[key].map((def, i) => {
+        const sb = D[key][i];
+        if (!sb) return def;
+        // For vendas: if supabase total=0 but default total>0, use default
+        if (key==='vendas' && !sb.total && def.total) return def;
+        if (key==='logistica' && !sb.entregas && def.entregas) return def;
+        if (key==='est_cub' && !sb.a && def.a) return def;
+        if (key==='est_gua' && !sb.a && def.a) return def;
+        if (key==='cmv' && !sb.fat && def.fat) return def;
+        return sb;
+      });
+    });
   } else {
     D = JSON.parse(JSON.stringify(DEFAULT));
     await saveToCloud();
