@@ -406,6 +406,7 @@ const DEFAULT = {
     {data:'15/jul',itau:494902.82,stone:24535.59,bradesco:8164.44,braInv:217871.37,sicredi:54576.40,sicrediApl:305499.00,total:1105549.62,variacao:410161.20},
     {data:'15/ago',itau:470272.96,stone:10846.71,bradesco:9222.84,braInv:217871.37,sicredi:74504.00,sicrediApl:309069.00,total:1091786.88,variacao:-13762.74},
     {data:'04/set',itau:550089.53,stone:13814.30,bradesco:21623.59,braInv:222056.68,sicredi:99649.01,sicrediApl:311496.86,total:1218729.97,variacao:126943.09},
+    {data:'06/nov',itau:566166.60,stone:14.28,bradesco:46695.99,braInv:225470.27,sicredi:121082.54,sicrediApl:317160.71,total:1276590.39,variacao:57860.42},
   ]
 };
 
@@ -762,7 +763,7 @@ function renderSaldo() {
   const varUlt = ultimo ? ultimo.variacao : 0;
 
   document.getElementById('kpi-financeiro').innerHTML = `
-    <div class="kpi ${ultimo&&ultimo.total>900000?'green':'orange'}"><div class="lbl">Saldo Atual (set/26)</div><div class="val">${RM(1218729.97)}</div><div class="sub">04/set/2026</div></div>
+    <div class="kpi ${ultimo&&ultimo.total>900000?'green':'orange'}"><div class="lbl">Saldo Atual (nov/26)</div><div class="val">${RM(1276590.39)}</div><div class="sub">06/nov/2026</div></div>
     <div class="kpi ${varUlt>=0?'green':'red'}"><div class="lbl">Variação Último Período</div><div class="val">${varUlt>=0?'▲':'▼'} ${RM(Math.abs(varUlt))}</div><div class="sub">${varUlt>=0?'+':''}${varUlt?((varUlt/( (ultimo?ultimo.total:1)-varUlt))*100).toFixed(1):'0'}%</div></div>
     <div class="kpi orange"><div class="lbl">Pico Histórico</div><div class="val">${RM(Math.max(maiorH,...s26.map(r=>r.total)))}</div><div class="sub">02/ago/24</div></div>
     <div class="kpi"><div class="lbl">Bancos Ativos</div><div class="val">5</div><div class="sub">Itaú · Stone · Bradesco · SICREDI · Aplicação</div></div>`;
@@ -876,7 +877,7 @@ function renderCharts(tab) {
     const labels = rows.map(r=>r.mes.slice(0,3));
     const cmvLabels = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
     const cmv24 = [54.58,59.43,59.34,60.0,74.02,53.21,68.71,53.58,85.50,48.28,101.78,109.14];
-    const cmv25 = [57.34,55.22,57.44,68.01,60.36,53.21,65.25,70.56,null,58.34,62.89,78.0];
+    const cmv25 = [57.34,55.22,57.44,68.01,60.36,53.21,65.25,70.56,63.64,58.34,62.89,78.0];
     const cmv26 = D.cmv.map(r=>r.fat>0?(r.nota/r.fat*100):null);
     mkChart('chCmvPct','line',{labels:cmvLabels,datasets:[
       {label:'2024',data:cmv24,borderColor:'#9b59b6',borderWidth:1.5,tension:.4,fill:false,pointRadius:3,borderDash:[3,3],pointBackgroundColor:'#9b59b6'},
